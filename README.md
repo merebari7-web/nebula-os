@@ -19,7 +19,7 @@
 - **Drag & drop icons** to rearrange them — the grid reflows live and your layout is saved
 - **Pin / unpin** icons from the desktop (right-click → Unpin; right-click the wallpaper → Arrange icons restores the full set)
 - **Keyboard navigation** — `Tab` / `Shift+Tab` to cycle, arrow keys to roam the grid, `Enter` to launch, `Esc` to deselect
-- Click to select, double-click to launch, right-click to rename
+- Click to select, **click again (or double-click) to open** — macOS click-to-open · right-click to rename/unpin
 - **Lock screen** — optional 4-digit PIN, idle auto-lock, giant clock
 - **Alt+Tab window switcher** with app tiles · **Alt+L** to lock
 - Parallax wallpaper (respects reduce-motion)
@@ -102,4 +102,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v1.3.0*
+*Made with ♥ in the browser. v1.3.1*

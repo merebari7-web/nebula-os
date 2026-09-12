@@ -215,7 +215,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 1.2.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 1.3.1 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';

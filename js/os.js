@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '1.3.0',
+    version: '1.3.1',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -788,9 +788,10 @@
     ic.innerHTML = appTile(a, 'di-tile') + '<span class="di-label">' + escapeHtml(iconLabel(a)) + '</span>';
     ic.addEventListener('click', () => {
       if (iconDrag.suppressClick) return;
-      document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
-      ic.classList.add('sel');
-      Sound.pop();
+      const wasSelected = ic.classList.contains('sel');
+      selectIconNode(ic, true);
+      if (wasSelected) openApp(id); // second click (macOS click-to-open)
+      else Sound.pop();
     });
     ic.addEventListener('dblclick', () => {
       if (iconDrag.suppressClick) return;
@@ -1092,8 +1093,9 @@
 
   function buildDesktop() {
     renderDesktopIcons();
-    document.body.addEventListener('click', () => {
+    document.body.addEventListener('click', (e) => {
       if (iconDrag.suppressClick) return;
+      if (e.target && e.target.closest && e.target.closest('#desktop-icons .desktop-icon')) return;
       document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
     });
 
