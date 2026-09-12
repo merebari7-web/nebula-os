@@ -815,7 +815,265 @@
     }
   });
 
-  window.Nebula = Object.assign({}, window.Nebula, { highlightCode, langOf });
+  
+  /* ============================================================
+     YOUTUBE — link/ID/playlist player with oEmbed metadata
+     ============================================================ */
+  registerApp({
+    id: 'youtube',
+    title: 'YouTube',
+    titleKey: 'app.youtube',
+    icon: '▶️',
+    tile: 'linear-gradient(135deg,#ff0033,#ff4d6d)',
+    open() {
+      createWindow({
+        id: 'youtube',
+        appId: 'youtube',
+        title: t('app.youtube'),
+        icon: '▶️',
+        width: 780,
+        height: 580,
+        content(win) {
+          const root = $el('div', 'yt');
+          root.innerHTML =
+            '<div class="yt-bar">' +
+              '<input class="yt-url" spellcheck="false" autocomplete="off" placeholder="Paste a YouTube link, video ID, or playlist link…">' +
+              '<button class="btn" data-play>▶ Play</button>' +
+              '<span class="spacer"></span>' +
+              '<button class="btn ghost sm" data-external>↗ Open site</button>' +
+            '</div>' +
+            '<div class="yt-player" data-player><div class="yt-empty"><div class="orb"></div>' +
+              '<p>Paste a link above to start watching.<br><small>watch · shorts · youtu.be · playlists all work</small></p></div></div>' +
+            '<div class="yt-meta">' +
+              '<span class="yt-thumb" data-thumb></span>' +
+              '<div class="yt-meta-txt"><div class="yt-title" data-title>Pick a video</div><div class="yt-author" data-author>recently played appears here</div></div>' +
+            '</div>' +
+            '<div class="yt-recent" data-recent></div>';
+          win.body.appendChild(root);
+
+          const urlInp = root.querySelector('.yt-url');
+          const playerBox = root.querySelector('[data-player]');
+          const thumbEl = root.querySelector('[data-thumb]');
+          const titleEl = root.querySelector('[data-title]');
+          const authorEl = root.querySelector('[data-author]');
+          const recentEl = root.querySelector('[data-recent]');
+          let currentId = '';
+          const LS = 'nebula.yt.recent.v1';
+
+          function extract(input) {
+            const s2 = (input || '').trim();
+            if (!s2) return null;
+            if (/^[\w-]{11}$/.test(s2)) return { id: s2, list: null };
+            const mId = s2.match(/(?:youtube\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([\w-]{11})/);
+            const mList = s2.match(/[?&]list=([\w-]+)/);
+            if (mId) return { id: mId[1], list: mList ? mList[1] : null };
+            if (mList) return { id: null, list: mList[1] };
+            return null;
+          }
+
+          function setPlayer(src) {
+            playerBox.innerHTML = '<iframe class="yt-frame" src="' + esc(src) + '" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+          }
+
+          async function play(input) {
+            const x = extract(input);
+            if (!x) {
+              notify('⚠️', 'Could not read that', 'Paste a full YouTube link (watch, youtu.be, shorts, playlist) or an 11-character video ID.');
+              return;
+            }
+            if (x.list && !x.id) {
+              setPlayer('https://www.youtube.com/embed?list=' + esc(x.list));
+              currentId = '';
+              titleEl.textContent = 'Playlist';
+              authorEl.textContent = 'playing from playlist ' + x.list;
+              pushRecent('pl:' + x.list, 'Playlist ' + x.list, 'YouTube');
+              return;
+            }
+            currentId = x.id;
+            setPlayer('https://www.youtube.com/embed/' + x.id + (x.list ? '?list=' + esc(x.list) : '') + '&rel=0');
+            titleEl.textContent = 'Loading…';
+            authorEl.textContent = '';
+            thumbEl.innerHTML = '';
+            try {
+              const r = await fetch('https://www.youtube.com/oembed?url=' +
+                encodeURIComponent('https://www.youtube.com/watch?v=' + x.id) + '&format=json');
+              if (r.ok) {
+                const d = await r.json();
+                titleEl.textContent = d.title;
+                authorEl.textContent = d.author_name || '';
+                thumbEl.innerHTML = '<img src="https://i.ytimg.com/vi/' + x.id + '/hqdefault.jpg" alt="" loading="lazy">';
+                pushRecent(x.id, d.title, d.author_name);
+              }
+            } catch (e) {
+              titleEl.textContent = 'Now playing: ' + x.id;
+            }
+          }
+
+          function pushRecent(id, title, author) {
+            let list = [];
+            try { list = JSON.parse(localStorage.getItem(LS) || '[]'); } catch (e) {}
+            list = list.filter((r) => r.id !== id);
+            list.unshift({ id, title: title || id, author: author || '', ts: Date.now() });
+            if (list.length > 6) list.length = 6;
+            try { localStorage.setItem(LS, JSON.stringify(list)); } catch (e) {}
+            renderRecent(list);
+          }
+          function renderRecent(list) {
+            recentEl.innerHTML = '';
+            if (!list || !list.length) return;
+            recentEl.appendChild($el('div', 'yt-recent-label', 'Recently played'));
+            list.forEach((r) => {
+              const b = $el('button', 'yt-recent-item');
+              const isPl = r.id.indexOf('pl:') === 0;
+              b.innerHTML =
+                '<span class="yt-rt-thumb">' + (isPl ? '📃' : '<img src="https://i.ytimg.com/vi/' + r.id + '/default.jpg" alt="" loading="lazy">') + '</span>' +
+                '<span class="yt-rt-txt"><b>' + esc(r.title) + '</b><small>' + esc(r.author || '') + '</small></span>';
+              b.addEventListener('click', () => {
+                urlInp.value = isPl ? 'list=' + r.id.slice(3) : 'https://youtu.be/' + r.id;
+                play(urlInp.value);
+              });
+              recentEl.appendChild(b);
+            });
+          }
+
+          root.querySelector('[data-play]').addEventListener('click', () => play(urlInp.value));
+          urlInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') play(urlInp.value); });
+          root.querySelector('[data-external]').addEventListener('click', () => {
+            window.open(currentId ? 'https://www.youtube.com/watch?v=' + currentId : 'https://www.youtube.com', '_blank', 'noopener');
+          });
+
+          try { renderRecent(JSON.parse(localStorage.getItem(LS) || '[]')); } catch (e) {}
+          win.hooks.focus = () => urlInp.focus({ preventScroll: true });
+          win.hooks.blur = () => urlInp.blur();
+        }
+      });
+    }
+  });
+
+  /* ============================================================
+     MAPS — live map with geocoded search (Photon + OpenStreetMap)
+     ============================================================ */
+  registerApp({
+    id: 'maps',
+    title: 'Maps',
+    titleKey: 'app.maps',
+    icon: '🗺️',
+    tile: 'linear-gradient(135deg,#22c55e,#0ea5e9)',
+    open() {
+      createWindow({
+        id: 'maps',
+        appId: 'maps',
+        title: t('app.maps'),
+        icon: '🗺️',
+        width: 840,
+        height: 580,
+        content(win) {
+          const CITIES = [
+            ['Port Harcourt', 4.7747, 7.0036], ['Lagos', 6.5244, 3.3792],
+            ['London', 51.5074, -0.1278], ['New York', 40.7128, -74.006],
+            ['Tokyo', 35.6762, 139.6503], ['Paris', 48.8566, 2.3522],
+            ['Sydney', -33.8688, 151.2093], ['Dubai', 25.2048, 55.2708],
+            ['Nairobi', -1.2921, 36.8219], ['Cape Town', -33.9249, 18.4241]
+          ];
+          const root = $el('div', 'maps');
+          root.innerHTML =
+            '<div class="maps-bar">' +
+              '<input class="maps-q" spellcheck="false" autocomplete="off" placeholder="Search any place on Earth…">' +
+              '<button class="btn" data-search>🔎 Search</button>' +
+              '<span class="spacer"></span>' +
+              '<button class="btn ghost sm" data-geo>📍 My location</button>' +
+              '<button class="btn ghost sm" data-full>↗ Full map</button>' +
+            '</div>' +
+            '<div class="maps-cities">' +
+              CITIES.map((c) => '<button class="maps-city" data-lat="' + c[1] + '" data-lon="' + c[2] + '">' + esc(c[0]) + '</button>').join('') +
+            '</div>' +
+            '<div class="maps-results" data-results></div>' +
+            '<div class="maps-view">' +
+              '<iframe class="maps-frame" loading="lazy" referrerpolicy="no-referrer"></iframe>' +
+              '<div class="maps-tag" data-tag></div>' +
+            '</div>';
+          win.body.appendChild(root);
+
+          const frame = root.querySelector('.maps-frame');
+          const qInp = root.querySelector('.maps-q');
+          const resultsEl = root.querySelector('[data-results]');
+          const tagEl = root.querySelector('[data-tag]');
+          let cur = { lat: CITIES[0][1], lon: CITIES[0][2], name: CITIES[0][0] };
+
+          function show(lat, lon, name, span) {
+            cur = { lat, lon, name: name || '' };
+            span = clampNum(span || 0.05, 0.004, 0.8);
+            frame.src = 'https://www.openstreetmap.org/export/embed.html?bbox=' +
+              (lon - span).toFixed(5) + '%2C' + (lat - span).toFixed(5) + '%2C' +
+              (lon + span).toFixed(5) + '%2C' + (lat + span).toFixed(5) +
+              '&layer=mapnik&marker=' + lat.toFixed(5) + '%2C' + lon.toFixed(5);
+            tagEl.textContent = name ? '📍 ' + name : (lat.toFixed(3) + ', ' + lon.toFixed(3));
+          }
+
+          async function search() {
+            const q = qInp.value.trim();
+            if (!q) return;
+            resultsEl.innerHTML = '<span class="maps-busy">Searching the planet…</span>';
+            try {
+              const r = await fetch('https://photon.komoot.io/api?q=' + encodeURIComponent(q) + '&limit=5&lang=en');
+              const d = await r.json();
+              const feats = (d.features || []).slice(0, 5);
+              if (!feats.length) {
+                resultsEl.innerHTML = '<span class="maps-busy">No places found for “' + esc(q) + '”.</span>';
+                return;
+              }
+              resultsEl.innerHTML = '';
+              feats.forEach((f) => {
+                const p = f.properties || {};
+                const coords = f.geometry.coordinates;
+                const label = [p.name, p.city, p.state, p.country].filter(Boolean).slice(0, 3).join(', ');
+                const b = $el('button', 'maps-result');
+                b.textContent = label;
+                b.addEventListener('click', () => {
+                  let span2 = 0.05;
+                  if (Array.isArray(p.extent) && p.extent.length === 4) {
+                    span2 = Math.max((p.extent[2] - p.extent[0]) / 2, (p.extent[3] - p.extent[1]) / 2, 0.004);
+                  }
+                  show(coords[1], coords[0], label, span2);
+                });
+                resultsEl.appendChild(b);
+              });
+              const first = feats[0];
+              const fp = first.properties || {};
+              let span3 = 0.05;
+              if (Array.isArray(fp.extent) && fp.extent.length === 4) span3 = Math.max((fp.extent[2] - fp.extent[0]) / 2, 0.01);
+              show(first.geometry.coordinates[1], first.geometry.coordinates[0],
+                [fp.name, fp.city].filter(Boolean).join(', '), span3);
+            } catch (e) {
+              resultsEl.innerHTML = '<span class="maps-busy">Search failed — check your connection.</span>';
+            }
+          }
+
+          qInp.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+          root.querySelector('[data-search]').addEventListener('click', search);
+          root.querySelectorAll('.maps-city').forEach((b) => {
+            b.addEventListener('click', () => show(parseFloat(b.dataset.lat), parseFloat(b.dataset.lon), b.textContent.trim(), 0.08));
+          });
+          root.querySelector('[data-geo]').addEventListener('click', () => {
+            if (!navigator.geolocation) { notify('⚠️', 'No geolocation', 'Your browser does not support it.'); return; }
+            tagEl.textContent = '📡 Locating…';
+            navigator.geolocation.getCurrentPosition(
+              (pos) => show(pos.coords.latitude, pos.coords.longitude, 'My location', 0.02),
+              () => notify('⚠️', 'Location denied', 'Use search or a city chip instead.'),
+              { timeout: 8000 }
+            );
+          });
+          root.querySelector('[data-full]').addEventListener('click', () => {
+            window.open('https://www.openstreetmap.org/?mlat=' + cur.lat + '&mlon=' + cur.lon + '#map=13/' + cur.lat + '/' + cur.lon, '_blank', 'noopener');
+          });
+
+          show(cur.lat, cur.lon, cur.name, 0.08);
+        }
+      });
+    }
+  });
+
+window.Nebula = Object.assign({}, window.Nebula, { highlightCode, langOf });
 
   /* boot once every app (incl. this file's) is registered */
   OS.init();

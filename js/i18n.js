@@ -81,7 +81,9 @@
       'app.clock': 'Clock',
       'app.code': 'Code Editor',
       'app.weather': 'Weather',
-      'app.snake': 'Snake'
+      'app.snake': 'Snake',
+      'app.youtube': 'YouTube',
+      'app.maps': 'Maps'
     },
 
     es: {
@@ -159,7 +161,9 @@
       'app.clock': 'Reloj',
       'app.code': 'Editor',
       'app.weather': 'Clima',
-      'app.snake': 'Serpiente'
+      'app.snake': 'Serpiente',
+      'app.youtube': 'YouTube',
+      'app.maps': 'Mapas'
     },
 
     fr: {
@@ -237,7 +241,9 @@
       'app.clock': 'Horloge',
       'app.code': 'Éditeur',
       'app.weather': 'Météo',
-      'app.snake': 'Serpent'
+      'app.snake': 'Serpent',
+      'app.youtube': 'YouTube',
+      'app.maps': 'Cartes'
     },
 
     de: {
@@ -315,7 +321,9 @@
       'app.clock': 'Uhr',
       'app.code': 'Editor',
       'app.weather': 'Wetter',
-      'app.snake': 'Schlange'
+      'app.snake': 'Schlange',
+      'app.youtube': 'YouTube',
+      'app.maps': 'Karten'
     },
 
     pt: {
@@ -393,7 +401,9 @@
       'app.clock': 'Relógio',
       'app.code': 'Editor',
       'app.weather': 'Clima',
-      'app.snake': 'Cobrinha'
+      'app.snake': 'Cobrinha',
+      'app.youtube': 'YouTube',
+      'app.maps': 'Mapas'
     },
 
     ja: {
@@ -471,7 +481,9 @@
       'app.clock': '時計',
       'app.code': 'エディタ',
       'app.weather': '天気',
-      'app.snake': 'スネーク'
+      'app.snake': 'スネーク',
+      'app.youtube': 'YouTube',
+      'app.maps': 'マップ'
     },
 
     hi: {
@@ -549,7 +561,9 @@
       'app.clock': 'घड़ी',
       'app.code': 'एडिटर',
       'app.weather': 'मौसम',
-      'app.snake': 'साँप'
+      'app.snake': 'साँप',
+      'app.youtube': 'YouTube',
+      'app.maps': 'नक्शे'
     },
 
     ar: {
@@ -627,7 +641,9 @@
       'app.clock': 'الساعة',
       'app.code': 'المحرر',
       'app.weather': 'الطقس',
-      'app.snake': 'الثعبان'
+      'app.snake': 'الثعبان',
+      'app.youtube': 'يوتيوب',
+      'app.maps': 'خرائط'
     }
   };
 

@@ -731,7 +731,7 @@
   }
 
   /* ---------- desktop icons ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'browser', 'paint', 'beats', 'calc', 'clock', 'weather', 'monitor', 'calendar', 'snake', 'settings', 'about'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'monitor', 'calendar', 'snake', 'settings', 'about'];
 
   function buildDesktop() {
     const d = byId('desktop-icons');

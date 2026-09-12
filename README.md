@@ -1,6 +1,6 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — window manager, virtual filesystem, live weather, code editor, beat sequencer, 8 languages, RTL support. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — window manager, virtual filesystem, live weather, live maps, YouTube player, code editor, beat sequencer, 8 languages, RTL support. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
@@ -20,7 +20,7 @@
 - **Edge snapping** — drag to the top/left/right edge for half/full screen with a live ghost preview
 - Minimize/maximize/restore animations, z-order focus
 
-### 15 applications
+### 17 applications
 | App | What it does |
 | --- | --- |
 | ⬛ Terminal | Multi-tab shell over the virtual FS: `ls cd cat tree find df ps top uname ping cowsay sl matrix fortune edit theme open neofetch sudo …` — arrow-key history, 25+ commands |
@@ -30,6 +30,8 @@
 | 🎨 Paint | Canvas drawing — brushes, colors, eraser, save as PNG |
 | 🎛️ Beat Deck | **16-step Web Audio sequencer** — program kick/snare/hat/bass, tempo, live playback |
 | 🌐 Nebula Web | Built-in browser with internal start page, history, new-tab fallback |
+| ▶️ YouTube | Plays any watch/shorts/youtu.be/playlist link via the official embed player — oEmbed title + author metadata, thumbnails, **Recently played** history |
+| 🗺️ Maps | Live OpenStreetMap with **geocoded search** (type any address, get results chips), 10 city shortcuts, geolocation, open-full-map |
 | 🧮 Calculator | Expression calculator with keyboard support and history |
 | 🕰️ Clock | Analog + digital, **world clocks**, stopwatch with laps, countdown timers |
 | 🌦️ Weather | **Live weather** (Open-Meteo, no API key) — 12 cities, geolocation, 24h forecast, offline cache |
@@ -76,7 +78,7 @@ js/fs.js          virtual filesystem (in-memory tree, localStorage persistence)
 js/i18n.js        8-language UI dictionary + RTL
 js/os.js          kernel: window manager, lock, alt-tab, parallax, i18n, idle
 js/apps.js        terminal, files, notes, paint, beat deck, browser, monitor, calendar, settings, about
-js/apps-extra.js  calculator, clock, code editor, weather, snake
+js/apps-extra.js  calculator, clock, code editor, weather, snake, youtube, maps
 ```
 
 ## 🛠️ Console API
