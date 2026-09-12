@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nebula OS — an operating system for the browser</title>
+<meta name="description" content="Nebula OS: an advanced desktop environment that runs 100% in your browser. Vanilla JS, zero dependencies.">
+<meta name="theme-color" content="#070a18">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="dark" data-motion="full">
+
+  <!-- ============ BOOT SCREEN ============ -->
+  <div id="boot">
+    <div class="boot-inner">
+      <div class="boot-logo">
+        <div class="orb"></div>
+        <h1>NEBULA <span>OS</span></h1>
+      </div>
+      <div class="boot-bar-wrap"><div id="boot-bar"></div></div>
+      <p class="boot-sub">Starting your universe…</p>
+    </div>
+  </div>
+
+  <!-- ============ DESKTOP ============ -->
+  <div id="desktop" class="hidden">
+    <div id="wallpaper" class="wallpaper"></div>
+    <div id="desktop-icons"></div>
+    <div id="windows"></div>
+    <div id="snap-preview" class="snap-preview"></div>
+
+    <!-- Start menu -->
+    <div id="start-menu" class="start-menu">
+      <input id="start-search" class="start-search" placeholder="Search apps…" spellcheck="false" autocomplete="off">
+      <div id="start-grid" class="start-grid"></div>
+      <div class="start-foot">
+        <div class="start-user">
+          <span class="start-avatar">🧑‍🚀</span>
+          <div><strong>Guest</strong><small>guest@nebula</small></div>
+        </div>
+        <div class="start-power">
+          <button id="start-restart" class="btn icon" title="Restart" aria-label="Restart">⟳</button>
+          <button id="start-shutdown" class="btn icon" title="Shut down" aria-label="Shut down">⏻</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Taskbar -->
+    <footer id="taskbar">
+      <button id="start-btn" class="start-btn" title="Start" aria-label="Start menu">
+        <span class="start-orb"></span>
+      </button>
+      <div class="taskbar-apps" id="taskbar-apps"></div>
+      <div class="tray">
+        <span class="tray-ic" title="Connected — nebula-net">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 8.5a15 15 0 0 1 19 0"/><path d="M5.5 12a10.5 10.5 0 0 1 13 0"/><path d="M8.7 15.4a6 6 0 0 1 6.6 0"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="tray-ic" id="tray-vol" title="Sound">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
+        </span>
+        <span class="tray-ic" title="Battery 87%">
+          <svg width="24" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="19" height="11" rx="2.5" stroke-width="1.6"/><rect x="4" y="4" width="11" height="6" rx="1" fill="currentColor" stroke="none"/><path d="M23.5 5v4" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <button class="tray-clock" id="tray-clock" title="Local time">
+          <span id="tray-time">--:--</span><small id="tray-date"></small>
+        </button>
+      </div>
+    </footer>
+
+    <div id="ctx-menu" class="ctx-menu"></div>
+    <div id="toasts" class="toasts"></div>
+    <div id="modal-root"></div>
+  </div>
+
+  <!-- ============ SHUTDOWN SCREEN ============ -->
+  <div id="shutdown" class="hidden">
+    <div class="shutdown-inner">
+      <div class="orb big"></div>
+      <h2>Nebula OS has shut down</h2>
+      <p>It's safe to close this tab — or bring the universe back to life.</p>
+      <button id="shutdown-restart" class="btn">⟳ Boot again</button>
+    </div>
+  </div>
+
+  <script src="js/fs.js"></script>
+  <script src="js/os.js"></script>
+  <script src="js/apps.js"></script>
+</body>
+</html>
