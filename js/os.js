@@ -1,6 +1,7 @@
 /* ============================================================
-   NEBULA OS — kernel
+   NEBULA OS — kernel v1.1
    Window manager · taskbar · start menu · dialogs · toasts
+   Lock screen · Alt+Tab · parallax · i18n · idle detection
    ============================================================ */
 (function () {
   'use strict';
@@ -27,6 +28,11 @@
     if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
     return (n / 1048576).toFixed(2) + ' MB';
   }
+  function safeJson(s) { try { return JSON.parse(s) || {}; } catch (e) { return {}; } }
+
+  /* ---------- i18n ---------- */
+  const I18N = window.I18N;
+  function t(key) { return I18N ? I18N.t(key) : key; }
 
   /* ---------- settings ---------- */
   const DEFAULT_SETTINGS = {
@@ -34,7 +40,11 @@
     accent: '#7c6cff',
     theme: 'dark',
     sound: true,
-    reduceMotion: false
+    reduceMotion: false,
+    language: 'en',
+    pin: '',
+    idleLock: true,
+    idleMinutes: 5
   };
 
   const WALLPAPERS = [
@@ -56,25 +66,23 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '1.0.0',
+    version: '1.1.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
-    windows: new Map(),   // id -> win
-    tasks: [],            // ordered window ids
+    windows: new Map(),
+    tasks: [],
     settings: Object.assign({}, DEFAULT_SETTINGS, safeJson(localStorage.getItem(LS_SETTINGS))),
-    _startRender: null
+    _startRender: null,
+    _refreshSettings: null
   };
-
-  function safeJson(s) { try { return JSON.parse(s) || {}; } catch (e) { return {}; } }
   OS.saveSettings = function () {
     try { localStorage.setItem(LS_SETTINGS, JSON.stringify(OS.settings)); } catch (e) {}
   };
 
   function applyWallpaper(i) {
     const wp = byId('wallpaper');
-    if (!wp) return;
-    wp.style.background = WALLPAPERS[i].css;
+    if (wp) wp.style.background = WALLPAPERS[i].css;
   }
 
   OS.applySettings = function () {
@@ -91,7 +99,8 @@
     ctx: null,
     ensure() {
       if (!this.ctx) {
-        try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { /* no audio */ }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC) { try { this.ctx = new AC(); } catch (e) {} }
       }
       if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
     },
@@ -110,7 +119,12 @@
     },
     open() { this.blip(540, 0.07, 'sine', 0.035); setTimeout(() => this.blip(760, 0.09, 'sine', 0.028), 60); },
     close() { this.blip(340, 0.09, 'sine', 0.035); },
-    pop() { this.blip(880, 0.045, 'triangle', 0.025); }
+    pop() { this.blip(880, 0.045, 'triangle', 0.025); },
+    chime() {
+      this.blip(523.25, 0.35, 'sine', 0.03);
+      setTimeout(() => this.blip(783.99, 0.5, 'sine', 0.03), 140);
+    },
+    fail() { this.blip(196, 0.18, 'square', 0.025); }
   };
 
   /* ---------- app registry ---------- */
@@ -118,8 +132,13 @@
   function registerApp(app) { APPS[app.id] = app; }
   function openApp(id, args) {
     const a = APPS[id];
-    if (!a) { notify('⚠️', 'Unknown app', `No app registered as "${id}".`); return; }
+    if (!a) { notify('⚠️', 'Unknown app', 'No app registered as "' + id + '".'); return; }
     a.open(args);
+  }
+  function appTitle(a) { return (a.titleKey && t(a.titleKey)) || a.title || a.id; }
+  function appTile(app, cls) {
+    const g = app.tile || 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+    return '<span class="app-tile ' + (cls || '') + '" style="background:' + g + '">' + (app.icon || '🪐') + '</span>';
   }
 
   /* ---------- window manager ---------- */
@@ -134,7 +153,12 @@
     focusedWin = win;
     if (win.minimized) {
       win.minimized = false;
-      win.el.classList.remove('minimized');
+      const e = win.el;
+      e.classList.remove('minimized');
+      if (!OS.settings.reduceMotion) {
+        e.classList.add('restore-anim');
+        requestAnimationFrame(() => requestAnimationFrame(() => e.classList.remove('restore-anim')));
+      }
     }
     OS.z += 1;
     win.el.style.zIndex = OS.z;
@@ -144,8 +168,14 @@
   }
 
   function minimizeWindow(win) {
-    win.minimized = true;
-    win.el.classList.add('minimized');
+    const e = win.el;
+    const dur = OS.settings.reduceMotion ? 0 : 165;
+    if (dur) e.classList.add('min-anim');
+    setTimeout(() => {
+      win.minimized = true;
+      e.classList.add('minimized');
+      e.classList.remove('min-anim');
+    }, dur);
     if (focusedWin === win) focusedWin = null;
     updateTaskbar();
     Sound.pop();
@@ -184,6 +214,11 @@
     OS.windows.delete(id);
     OS.tasks = OS.tasks.filter((x) => x !== id);
     if (focusedWin === win) focusedWin = null;
+    if (altTab.active) {
+      altTab.order = altTab.order.filter((x) => x !== id);
+      if (!altTab.order.length) closeAltTab();
+      else { renderAltTab(); }
+    }
     updateTaskbar();
     setTimeout(() => win.el.remove(), 180);
   }
@@ -221,6 +256,7 @@
 
     const win = {
       id,
+      appId: opts.appId || null,
       title: opts.title || 'Window',
       icon: opts.icon || '🪐',
       el: elWin,
@@ -335,7 +371,7 @@
         if (e.button !== 0 || win.maximized) return;
         e.preventDefault(); e.stopPropagation();
         focusWindow(win);
-        const dir = h.dataset.dir || (h.classList[1] || '');
+        const dir = (h.className.match(/rh-([a-z]+)/) || [])[1] || '';
         const r = win.el.getBoundingClientRect();
         const sx = e.clientX, sy = e.clientY;
         const onMove = (ev) => {
@@ -368,7 +404,7 @@
       const b = el('button', 'task');
       if (focusedWin === w && !w.minimized) b.classList.add('focused');
       if (w.minimized) b.classList.add('min');
-      b.innerHTML = '<span>' + w.icon + '</span><span class="task-label">' + escapeHtml(w.title) + '</span>';
+      b.innerHTML = appTile(w, 'task-tile') + '<span class="task-label">' + escapeHtml(w.title) + '</span>';
       b.addEventListener('click', () => {
         if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); focusWindow(w); }
         else if (focusedWin === w) minimizeWindow(w);
@@ -378,23 +414,69 @@
     });
   }
 
+  /* ---------- Alt+Tab ---------- */
+  const altTab = { active: false, index: 0, order: [] };
+
+  function openAltTab() {
+    if (isLocked() || OS.windows.size === 0) return;
+    altTab.active = true;
+    altTab.order = OS.tasks.filter((id) => { const w = OS.windows.get(id); return w && !w.minimized; });
+    if (!altTab.order.length) altTab.order = OS.tasks.slice();
+    let i = 0;
+    if (focusedWin) { i = altTab.order.indexOf(focusedWin.id); if (i === -1) i = 0; }
+    altTab.index = i;
+    renderAltTab();
+    byId('alt-tab').classList.remove('hidden');
+    Sound.pop();
+  }
+  function cycleAltTab(dir) {
+    if (!altTab.active || !altTab.order.length) return;
+    altTab.index = (altTab.index + dir + altTab.order.length) % altTab.order.length;
+    renderAltTab();
+  }
+  function closeAltTab() {
+    if (!altTab.active) return;
+    altTab.active = false;
+    byId('alt-tab').classList.add('hidden');
+    const id = altTab.order[altTab.index];
+    const w = id && OS.windows.get(id);
+    if (w) focusWindow(w);
+  }
+  function renderAltTab() {
+    const row = byId('alt-tab-row');
+    if (!row) return;
+    row.innerHTML = '';
+    altTab.order.forEach((id, i) => {
+      const w = OS.windows.get(id);
+      if (!w) return;
+      const b = el('button', 'alt-item' + (i === altTab.index ? ' sel' : ''));
+      b.innerHTML = appTile(w, 'alt-tile') + '<span>' + escapeHtml(w.title) + '</span>';
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        altTab.index = i;
+        closeAltTab();
+      });
+      row.appendChild(b);
+    });
+  }
+
   /* ---------- toasts ---------- */
   function notify(icon, title, body) {
     const wrap = byId('toasts');
     if (!wrap) return;
-    const t = el('div', 'toast');
-    t.innerHTML = '<span class="toast-icon">' + (icon || '💬') + '</span>' +
+    const toast = el('div', 'toast');
+    toast.innerHTML = '<span class="toast-icon">' + (icon || '💬') + '</span>' +
       '<div><strong>' + escapeHtml(title) + '</strong>' +
       (body ? '<p>' + escapeHtml(body) + '</p>' : '') + '</div>';
-    wrap.appendChild(t);
-    requestAnimationFrame(() => t.classList.add('show'));
+    wrap.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
     let gone = false;
     const remove = () => {
       if (gone) return; gone = true;
-      t.classList.remove('show');
-      setTimeout(() => t.remove(), 280);
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 280);
     };
-    t.addEventListener('click', remove);
+    toast.addEventListener('click', remove);
     setTimeout(remove, 5400);
   }
 
@@ -421,7 +503,7 @@
   }
 
   /* ---------- modal dialogs ---------- */
-  function ask({ title, message, input = true, placeholder = '', value = '', okLabel = 'OK', cancelLabel = 'Cancel' }) {
+  function ask({ title, message, input = true, placeholder = '', value = '', okLabel, cancelLabel }) {
     return new Promise((res) => {
       const root = byId('modal-root');
       const wrap = el('div', 'modal-overlay');
@@ -431,8 +513,8 @@
           (message ? '<div class="modal-msg">' + escapeHtml(message) + '</div>' : '') +
           (input ? '<input class="modal-input" placeholder="' + escapeHtml(placeholder) + '" value="' + escapeHtml(value) + '" spellcheck="false">' : '') +
           '<div class="modal-actions">' +
-            '<button class="btn ghost" data-a="cancel">' + escapeHtml(cancelLabel || 'Cancel') + '</button>' +
-            '<button class="btn" data-a="ok">' + escapeHtml(okLabel) + '</button>' +
+            '<button class="btn ghost" data-a="cancel">' + escapeHtml(cancelLabel || t('common.cancel')) + '</button>' +
+            '<button class="btn" data-a="ok">' + escapeHtml(okLabel || t('common.ok')) + '</button>' +
           '</div>' +
         '</div>';
       root.appendChild(wrap);
@@ -448,28 +530,158 @@
       wrap.querySelector('[data-a="cancel"]').addEventListener('click', () => finish(null));
       wrap.querySelector('[data-a="ok"]').addEventListener('click', () => finish(inp ? inp.value : ''));
       wrap.addEventListener('pointerdown', (e) => { if (e.target === wrap) finish(null); });
-      const onKey = (e) => {
-        if (e.key === 'Escape') { e.stopPropagation(); finish(null); }
-        if (e.key === 'Enter' && (!inp || e.target === inp)) finish(inp ? inp.value : '');
-      };
-      wrap.addEventListener('keydown', onKey);
       if (inp) inp.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') { e.stopPropagation(); finish(null); }
         if (e.key === 'Enter') finish(inp.value);
       });
+      wrap.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { e.stopPropagation(); finish(null); }
+        if (e.key === 'Enter' && (!inp || e.target !== inp)) finish(inp ? inp.value : '');
+      });
     });
   }
-  function confirm(title, message, okLabel) {
-    return ask({ title, message, input: false, okLabel: okLabel || 'Confirm' }).then((v) => v !== null);
+  function confirmDialog(title, message, okLabel) {
+    return ask({ title, message, input: false, okLabel: okLabel || t('common.ok') }).then((v) => v !== null);
   }
   OS.ask = ask;
-  OS.confirm = confirm;
+  OS.confirm = confirmDialog;
 
   /* ---------- clock ---------- */
   function tickClock() {
     const now = new Date();
     byId('tray-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     byId('tray-date').textContent = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+    if (isLocked()) updateLockTime();
+  }
+
+  /* ---------- lock screen ---------- */
+  function isLocked() { return byId('lock-screen').classList.contains('hidden') === false; }
+
+  function updateLockTime() {
+    const now = new Date();
+    byId('lock-time').textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    byId('lock-date').textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+
+  let pinBuf = '';
+  function renderDots() {
+    const d = byId('lock-dots');
+    if (!d) return;
+    d.innerHTML = '';
+    for (let i = 0; i < 4; i++) d.appendChild(el('span', 'lock-dot' + (i < pinBuf.length ? ' on' : '')));
+  }
+  function pinAppend(digit) {
+    if (pinBuf.length >= 4) return;
+    pinBuf += digit;
+    renderDots();
+    if (pinBuf.length === 4) {
+      if (pinBuf === String(OS.settings.pin)) {
+        pinBuf = '';
+        renderDots();
+        unlockScreen();
+      } else {
+        Sound.fail();
+        const wrap = byId('lock-pin-wrap');
+        wrap.classList.add('shake');
+        byId('lock-hint').textContent = t('lock.wrong');
+        pinBuf = '';
+        renderDots();
+        setTimeout(() => {
+          wrap.classList.remove('shake');
+          if (isLocked()) byId('lock-hint').textContent = t('lock.pin');
+        }, 420);
+      }
+    }
+  }
+
+  function lockScreen() {
+    if (isLocked()) return;
+    byId('lock-bg').style.background = WALLPAPERS[OS.settings.wallpaper].css;
+    updateLockTime();
+    const hasPin = !!OS.settings.pin;
+    byId('lock-pin-wrap').classList.toggle('hidden', !hasPin);
+    byId('lock-reset').classList.toggle('hidden', !hasPin);
+    byId('lock-hint').classList.toggle('hidden', hasPin);
+    byId('lock-hint').textContent = hasPin ? t('lock.pin') : t('lock.hint');
+    pinBuf = '';
+    renderDots();
+    byId('lock-screen').classList.remove('hidden');
+    document.body.classList.add('locked');
+    hideMenu();
+    byId('start-menu') && byId('start-menu').classList.remove('open');
+    Sound.pop();
+  }
+  function unlockScreen() {
+    byId('lock-screen').classList.add('hidden');
+    document.body.classList.remove('locked');
+    lastActivity = Date.now();
+    Sound.open();
+  }
+
+  function buildLock() {
+    const pad = byId('lock-pad');
+    ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', '✓'].forEach((k) => {
+      const b = el('button', 'lock-key');
+      b.textContent = k;
+      b.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        if (k === '⌫') { pinBuf = pinBuf.slice(0, -1); renderDots(); }
+        else pinAppend(k);
+        Sound.pop();
+      });
+      pad.appendChild(b);
+    });
+    byId('lock-reset').addEventListener('click', (e) => {
+      e.stopPropagation();
+      confirmDialog(t('lock.reset'), t('lock.resetMsg'), t('lock.resetBtn')).then((ok) => {
+        if (ok) {
+          OS.settings.pin = '';
+          OS.saveSettings();
+          byId('lock-pin-wrap').classList.add('hidden');
+          byId('lock-reset').classList.add('hidden');
+          byId('lock-hint').classList.remove('hidden');
+          byId('lock-hint').textContent = t('lock.hint');
+        }
+      });
+    });
+    byId('lock-screen').addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.lock-key') || e.target.closest('.lock-reset') || e.target.closest('.modal-overlay')) return;
+      if (!OS.settings.pin) unlockScreen();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!isLocked()) return;
+      if (e.target && e.target.closest && e.target.closest('.modal-overlay')) return;
+      if (OS.settings.pin) {
+        if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pinAppend(e.key); Sound.pop(); }
+        else if (e.key === 'Backspace') { e.preventDefault(); pinBuf = pinBuf.slice(0, -1); renderDots(); }
+      } else {
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+        e.preventDefault();
+        unlockScreen();
+      }
+    });
+  }
+
+  /* ---------- idle / activity ---------- */
+  let lastActivity = Date.now();
+  ['pointerdown', 'keydown', 'pointermove', 'wheel'].forEach((ev) => {
+    document.addEventListener(ev, () => { lastActivity = Date.now(); }, { passive: true });
+  });
+
+  /* ---------- parallax wallpaper ---------- */
+  let pRaf = null;
+  function buildParallax() {
+    byId('desktop').addEventListener('pointermove', (e) => {
+      if (OS.settings.reduceMotion || pRaf || isLocked()) return;
+      pRaf = requestAnimationFrame(() => {
+        pRaf = null;
+        const dx = (e.clientX / innerWidth - 0.5) * 16;
+        const dy = (e.clientY / innerHeight - 0.5) * 12;
+        const wp = byId('wallpaper');
+        if (wp) wp.style.transform = 'scale(1.045) translate(' + (-dx).toFixed(1) + 'px,' + (-dy).toFixed(1) + 'px)';
+      });
+    });
   }
 
   /* ---------- start menu ---------- */
@@ -481,15 +693,16 @@
     function render(filter) {
       grid.innerHTML = '';
       const f = (filter || '').toLowerCase();
-      const apps = Object.values(APPS).sort((a, b) => a.title.localeCompare(b.title));
+      const apps = Object.values(APPS).sort((a, b) => appTitle(a).localeCompare(appTitle(b)));
       apps.forEach((a) => {
-        if (f && !a.title.toLowerCase().includes(f)) return;
+        const label = appTitle(a);
+        if (f && !label.toLowerCase().includes(f)) return;
         const b = el('button', 'start-app');
-        b.innerHTML = '<span class="start-app-ic">' + a.icon + '</span><span>' + escapeHtml(a.title) + '</span>';
+        b.innerHTML = appTile(a, 'start-app-tile') + '<span>' + escapeHtml(label) + '</span>';
         b.addEventListener('click', () => { openApp(a.id); closeStart(); });
         grid.appendChild(b);
       });
-      if (!grid.children.length) grid.appendChild(el('div', 'start-empty', 'No apps match “' + escapeHtml(filter) + '”'));
+      if (!grid.children.length) grid.appendChild(el('div', 'start-empty', 'No apps found'));
     }
     OS._startRender = render;
 
@@ -506,9 +719,7 @@
     document.addEventListener('pointerdown', (e) => {
       if (!e.target.closest('#start-menu') && !e.target.closest('#start-btn')) close();
     });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    window.closeStart = closeStart;
-
+    byId('start-lock').addEventListener('click', () => { close(); lockScreen(); });
     byId('start-restart').addEventListener('click', () => location.reload());
     byId('start-shutdown').addEventListener('click', () => {
       Sound.close();
@@ -516,10 +727,11 @@
       byId('shutdown').classList.remove('hidden');
     });
     byId('shutdown-restart').addEventListener('click', () => location.reload());
+    byId('tray-clock').addEventListener('click', () => openApp('clock'));
   }
 
   /* ---------- desktop icons ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'notes', 'browser', 'paint', 'beats', 'monitor', 'calendar', 'settings', 'about'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'browser', 'paint', 'beats', 'calc', 'clock', 'weather', 'monitor', 'calendar', 'snake', 'settings', 'about'];
 
   function buildDesktop() {
     const d = byId('desktop-icons');
@@ -527,7 +739,8 @@
       const a = APPS[id];
       if (!a) return;
       const ic = el('div', 'desktop-icon');
-      ic.innerHTML = '<span class="di-ic">' + a.icon + '</span><span class="di-label">' + escapeHtml(a.title) + '</span>';
+      ic.dataset.app = id;
+      ic.innerHTML = appTile(a, 'di-tile') + '<span class="di-label">' + escapeHtml(appTitle(a)) + '</span>';
       ic.addEventListener('click', () => {
         document.querySelectorAll('.desktop-icon').forEach((x) => x.classList.remove('sel'));
         ic.classList.add('sel');
@@ -536,17 +749,16 @@
       ic.addEventListener('contextmenu', (e) => {
         e.preventDefault(); e.stopPropagation();
         showMenu(e.clientX, e.clientY, [
-          { label: 'Open ' + a.title, icon: a.icon, action: () => openApp(id) },
+          { label: appTitle(a), icon: a.icon, action: () => openApp(id) },
           '-',
           {
-            label: 'Rename', icon: '✏️',
+            label: t('common.rename'), icon: '✏️',
             action: () => ask({
-              title: 'Rename app', message: 'New name for ' + a.title, value: a.title,
-              okLabel: 'Rename'
+              title: t('common.rename'), message: a.title || id, value: appTitle(a), okLabel: t('common.rename')
             }).then((v) => {
-              if (v && v !== a.title) {
-                a.title = v.trim() || a.title;
-                ic.querySelector('.di-label').textContent = a.title;
+              if (v && v.trim()) {
+                a._customTitle = v.trim();
+                ic.querySelector('.di-label').textContent = a._customTitle;
                 if (OS._startRender) OS._startRender('');
                 updateTaskbar();
               }
@@ -563,31 +775,85 @@
     byId('wallpaper').addEventListener('contextmenu', (e) => {
       e.preventDefault();
       showMenu(e.clientX, e.clientY, [
-        { label: 'New note', icon: '📝', action: () => openApp('notes', { fresh: true }) },
-        { label: 'Open Terminal', icon: '⬛', action: () => openApp('terminal') },
-        { label: 'Next wallpaper', icon: '🖼️', action: cycleWallpaper },
+        { label: t('ctx.newNote'), icon: '📝', action: () => openApp('notes', { fresh: true }) },
+        { label: t('ctx.terminal'), icon: '⬛', action: () => openApp('terminal') },
+        { label: t('ctx.wallpaper'), icon: '🖼️', action: cycleWallpaper },
+        { label: t('ctx.theme'), icon: '🌓', action: toggleTheme },
+        { label: t('ctx.lock'), icon: '🔒', action: lockScreen },
         '-',
-        { label: 'About Nebula OS', icon: '🪐', action: () => openApp('about') }
+        { label: t('ctx.about'), icon: '🪐', action: () => openApp('about') }
       ]);
     });
+  }
+
+  function toggleTheme() {
+    OS.settings.theme = OS.settings.theme === 'dark' ? 'light' : 'dark';
+    OS.saveSettings();
+    OS.applySettings();
+    notify('🌓', OS.settings.theme === 'dark' ? 'Dark theme' : 'Light theme', OS.name + ' · ' + OS.settings.theme);
   }
 
   function cycleWallpaper() {
     OS.settings.wallpaper = (OS.settings.wallpaper + 1) % WALLPAPERS.length;
     OS.saveSettings();
     OS.applySettings();
-    notify('🖼️', 'Wallpaper', 'Switched to “' + WALLPAPERS[OS.settings.wallpaper].name + '”.');
+    notify('🖼️', 'Wallpaper', WALLPAPERS[OS.settings.wallpaper].name);
   }
+
+  /* ---------- i18n ---------- */
+  function applyI18n() {
+    I18N.set(OS.settings.language);
+    document.documentElement.lang = I18N.lang;
+    document.documentElement.dir = I18N.rtl ? 'rtl' : 'ltr';
+    document.title = t('doc.title');
+    const sub = byId('boot-sub');
+    if (sub) sub.textContent = t('boot.sub');
+    const userName = byId('start-user-name');
+    if (userName) userName.textContent = t('start.user');
+    byId('start-search').placeholder = t('start.search');
+    byId('start-lock').title = t('start.lock');
+    byId('start-restart').title = t('start.restart');
+    byId('start-shutdown').title = t('start.shutdown');
+    byId('tray-wifi').title = t('tray.wifi');
+    byId('tray-vol').title = t('tray.vol');
+    byId('tray-batt').title = t('tray.batt');
+    byId('tray-clock').title = t('tray.clock');
+    if (isLocked()) {
+      byId('lock-hint').textContent = OS.settings.pin ? t('lock.pin') : t('lock.hint');
+      byId('lock-reset').textContent = t('lock.reset');
+    }
+    document.querySelectorAll('.desktop-icon').forEach((ic) => {
+      const a = APPS[ic.dataset.app];
+      if (a) ic.querySelector('.di-label').textContent = a._customTitle || appTitle(a);
+    });
+    if (OS._startRender) OS._startRender(byId('start-search').value);
+    OS.windows.forEach((w) => {
+      const a = w.appId && APPS[w.appId];
+      if (a) {
+        w.title = a._customTitle || appTitle(a);
+        const titleEl = w.el.querySelector('.win-title');
+        if (titleEl) titleEl.textContent = w.title;
+      }
+    });
+    updateTaskbar();
+    if (OS._refreshSettings) OS._refreshSettings();
+  }
+  OS.setLanguage = function (lang) {
+    OS.settings.language = lang;
+    OS.saveSettings();
+    applyI18n();
+    notify('🌐', 'Language', I18N.LANGS.find((l) => l.id === lang).name);
+  };
 
   /* ---------- boot ---------- */
   function boot() {
     const bar = byId('boot-bar');
     let p = 0;
-    const t = setInterval(() => {
+    const t2 = setInterval(() => {
       p = Math.min(100, p + 9 + Math.random() * 18);
       bar.style.width = p + '%';
       if (p >= 100) {
-        clearInterval(t);
+        clearInterval(t2);
         setTimeout(() => {
           byId('boot').classList.add('done');
           setTimeout(() => {
@@ -603,21 +869,55 @@
   /* ---------- init ---------- */
   OS.init = function () {
     OS.applySettings();
+    applyI18n();
+    buildLock();
+    buildParallax();
     buildDesktop();
     buildStartMenu();
     tickClock();
     setInterval(tickClock, 1000);
+    setInterval(() => {
+      if (OS.settings.idleLock && !isLocked() &&
+          (Date.now() - lastActivity) > OS.settings.idleMinutes * 60000) lockScreen();
+    }, 20000);
+
     document.addEventListener('pointerdown', (e) => {
       if (!e.target.closest('#ctx-menu')) hideMenu();
     }, true);
-    byId('wallpaper').style.background = WALLPAPERS[OS.settings.wallpaper].css;
+
+    /* global keyboard shortcuts */
+    document.addEventListener('keydown', (e) => {
+      if (isLocked()) return;
+      if (e.altKey && e.key === 'Tab') {
+        e.preventDefault();
+        if (!altTab.active) openAltTab();
+        else cycleAltTab(e.shiftKey ? -1 : 1);
+      } else if (e.altKey && (e.key === 'l' || e.key === 'L')) {
+        e.preventDefault();
+        lockScreen();
+      } else if (e.key === 'Escape') {
+        closeAltTab();
+        byId('start-menu').classList.remove('open');
+        hideMenu();
+      }
+    });
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'Alt' && altTab.active) closeAltTab();
+    });
+
+    /* first-interaction boot chime */
+    let chimed = false;
+    document.addEventListener('pointerdown', () => {
+      if (!chimed) { chimed = true; Sound.chime(); }
+    });
+
     boot();
     setTimeout(() => {
       if (!localStorage.getItem('nebula.welcomed')) {
         localStorage.setItem('nebula.welcomed', '1');
-        notify('🪐', 'Welcome to Nebula OS', 'Double-click an icon to launch an app, or press the orb below to open Start.');
+        notify('🪐', t('welcome.title'), t('welcome.body'));
       }
-    }, 1600);
+    }, 1700);
   };
 
   /* ---------- public API ---------- */
@@ -631,11 +931,14 @@
   window.focusWindow = focusWindow;
   window.notify = notify;
   window.ask = ask;
-  window.confirmDialog = confirm;
+  window.confirmDialog = confirmDialog;
   window.Sound = Sound;
   window.esc = escapeHtml;
   window.$el = el;
   window.$id = byId;
   window.clampNum = clamp;
   window.fmtBytes = fmtBytes;
+  window.t = t;
+  window.appTitle = appTitle;
+  window.lockScreen = lockScreen;
 })();

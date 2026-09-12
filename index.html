@@ -3,10 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nebula OS — an operating system for the browser</title>
-<meta name="description" content="Nebula OS: an advanced desktop environment that runs 100% in your browser. Vanilla JS, zero dependencies.">
+<title>Nebula OS — an operating system for the web</title>
+<meta name="description" content="Nebula OS: an advanced desktop environment that runs 100% in your browser. Window manager, terminal, code editor, live weather, beat sequencer. Vanilla JS, zero dependencies.">
 <meta name="theme-color" content="#070a18">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nebula OS — an operating system for the web">
+<meta property="og:description" content="A full desktop in your browser: window manager with edge-snapping, terminal, code editor, live weather, beat sequencer. Zero dependencies.">
+<meta property="og:image" content="https://merebari7-web.github.io/nebula-os/docs/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪐</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-theme="dark" data-motion="full">
@@ -15,11 +23,12 @@
   <div id="boot">
     <div class="boot-inner">
       <div class="boot-logo">
-        <div class="orb"></div>
+        <div class="orb boot-orb"></div>
         <h1>NEBULA <span>OS</span></h1>
       </div>
       <div class="boot-bar-wrap"><div id="boot-bar"></div></div>
-      <p class="boot-sub">Starting your universe…</p>
+      <p class="boot-sub" id="boot-sub">Starting your universe…</p>
+      <p class="boot-ver">v1.1.0 · web build · 8 languages</p>
     </div>
   </div>
 
@@ -37,9 +46,10 @@
       <div class="start-foot">
         <div class="start-user">
           <span class="start-avatar">🧑‍🚀</span>
-          <div><strong>Guest</strong><small>guest@nebula</small></div>
+          <div><strong id="start-user-name">Guest</strong><small>guest@nebula</small></div>
         </div>
         <div class="start-power">
+          <button id="start-lock" class="btn icon" title="Lock" aria-label="Lock">🔒</button>
           <button id="start-restart" class="btn icon" title="Restart" aria-label="Restart">⟳</button>
           <button id="start-shutdown" class="btn icon" title="Shut down" aria-label="Shut down">⏻</button>
         </div>
@@ -53,13 +63,13 @@
       </button>
       <div class="taskbar-apps" id="taskbar-apps"></div>
       <div class="tray">
-        <span class="tray-ic" title="Connected — nebula-net">
+        <span class="tray-ic" id="tray-wifi" title="Connected — nebula-net">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 8.5a15 15 0 0 1 19 0"/><path d="M5.5 12a10.5 10.5 0 0 1 13 0"/><path d="M8.7 15.4a6 6 0 0 1 6.6 0"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
         </span>
         <span class="tray-ic" id="tray-vol" title="Sound">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
         </span>
-        <span class="tray-ic" title="Battery 87%">
+        <span class="tray-ic" id="tray-batt" title="Battery 87%">
           <svg width="24" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="19" height="11" rx="2.5" stroke-width="1.6"/><rect x="4" y="4" width="11" height="6" rx="1" fill="currentColor" stroke="none"/><path d="M23.5 5v4" stroke-width="2" stroke-linecap="round"/></svg>
         </span>
         <button class="tray-clock" id="tray-clock" title="Local time">
@@ -68,9 +78,30 @@
       </div>
     </footer>
 
+    <!-- Alt+Tab switcher -->
+    <div id="alt-tab" class="alt-tab hidden">
+      <div class="alt-tab-row" id="alt-tab-row"></div>
+    </div>
+
     <div id="ctx-menu" class="ctx-menu"></div>
     <div id="toasts" class="toasts"></div>
     <div id="modal-root"></div>
+  </div>
+
+  <!-- ============ LOCK SCREEN ============ -->
+  <div id="lock-screen" class="hidden" aria-hidden="true">
+    <div id="lock-bg" class="lock-bg"></div>
+    <div class="lock-stars"></div>
+    <div class="lock-content">
+      <div id="lock-time" class="lock-time">--:--</div>
+      <div id="lock-date" class="lock-date"></div>
+      <div id="lock-pin-wrap" class="hidden">
+        <div id="lock-dots" class="lock-dots"></div>
+        <div id="lock-pad" class="lock-pad"></div>
+      </div>
+      <button id="lock-reset" class="lock-reset hidden">Reset PIN</button>
+      <div id="lock-hint" class="lock-hint">Click or press any key to unlock</div>
+    </div>
   </div>
 
   <!-- ============ SHUTDOWN SCREEN ============ -->
@@ -84,7 +115,9 @@
   </div>
 
   <script src="js/fs.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/os.js"></script>
   <script src="js/apps.js"></script>
+  <script src="js/apps-extra.js"></script>
 </body>
 </html>
