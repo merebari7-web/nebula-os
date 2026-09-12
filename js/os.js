@@ -8,6 +8,7 @@
 
   const TASKBAR_H = 56;
   const LS_SETTINGS = 'nebula.settings.v1';
+  const LS_DESKTOP = 'nebula.desktop.v1';
 
   /* ---------- tiny DOM helpers ---------- */
   function byId(id) { return document.getElementById(id); }
@@ -66,7 +67,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '1.1.0',
+    version: '1.2.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -730,46 +731,230 @@
     byId('tray-clock').addEventListener('click', () => openApp('clock'));
   }
 
-  /* ---------- desktop icons ---------- */
+  /* ---------- desktop icons (interactive) ---------- */
   const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'monitor', 'calendar', 'snake', 'settings', 'about'];
 
-  function buildDesktop() {
-    const d = byId('desktop-icons');
-    DESKTOP_APPS.forEach((id) => {
-      const a = APPS[id];
-      if (!a) return;
-      const ic = el('div', 'desktop-icon');
-      ic.dataset.app = id;
-      ic.innerHTML = appTile(a, 'di-tile') + '<span class="di-label">' + escapeHtml(appTitle(a)) + '</span>';
-      ic.addEventListener('click', () => {
-        document.querySelectorAll('.desktop-icon').forEach((x) => x.classList.remove('sel'));
-        ic.classList.add('sel');
-      });
-      ic.addEventListener('dblclick', () => openApp(id));
-      ic.addEventListener('contextmenu', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        showMenu(e.clientX, e.clientY, [
-          { label: appTitle(a), icon: a.icon, action: () => openApp(id) },
-          '-',
-          {
-            label: t('common.rename'), icon: '✏️',
-            action: () => ask({
-              title: t('common.rename'), message: a.title || id, value: appTitle(a), okLabel: t('common.rename')
-            }).then((v) => {
-              if (v && v.trim()) {
-                a._customTitle = v.trim();
-                ic.querySelector('.di-label').textContent = a._customTitle;
-                if (OS._startRender) OS._startRender('');
-                updateTaskbar();
-              }
-            })
-          }
-        ]);
-      });
-      d.appendChild(ic);
+  let desktopState = loadDesktopState();
+  function loadDesktopState() {
+    // NB: runs before app registration — renderDesktopIcons() skips unknown ids
+    const st = Object.assign({ icons: DESKTOP_APPS.slice() }, safeJson(localStorage.getItem(LS_DESKTOP)));
+    if (!Array.isArray(st.icons) || !st.icons.length) st.icons = DESKTOP_APPS.slice();
+    return st;
+  }
+  function saveDesktopState() {
+    try { localStorage.setItem(LS_DESKTOP, JSON.stringify(desktopState)); } catch (e) {}
+  }
+  function iconLabel(a) { return a._customTitle || appTitle(a); }
+
+  function makeIcon(id) {
+    const a = APPS[id];
+    const ic = el('div', 'desktop-icon');
+    ic.dataset.app = id;
+    ic.innerHTML = appTile(a, 'di-tile') + '<span class="di-label">' + escapeHtml(iconLabel(a)) + '</span>';
+    ic.addEventListener('click', () => {
+      if (iconDrag.suppressClick) return;
+      document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
+      ic.classList.add('sel');
+      Sound.pop();
     });
+    ic.addEventListener('dblclick', () => {
+      if (iconDrag.suppressClick) return;
+      openApp(id);
+    });
+    ic.addEventListener('contextmenu', (e) => {
+      e.preventDefault(); e.stopPropagation();
+      showMenu(e.clientX, e.clientY, [
+        { label: t('icon.open'), icon: '🚀', action: () => openApp(id) },
+        '-',
+        {
+          label: t('common.rename'), icon: '✏️',
+          action: () => ask({
+            title: t('common.rename'), message: a.title || id, value: iconLabel(a), okLabel: t('common.rename')
+          }).then((v) => {
+            if (v && v.trim()) {
+              a._customTitle = v.trim();
+              document.querySelectorAll('.desktop-icon[data-app="' + id + '"] .di-label').forEach((n) => { n.textContent = a._customTitle; });
+              if (OS._startRender) OS._startRender('');
+              updateTaskbar();
+            }
+          })
+        },
+        { label: t('icon.unpin'), icon: '📌', action: () => unpinIcon(id) }
+      ]);
+    });
+    ic.addEventListener('pointerdown', (e) => startIconDrag(e, id, ic));
+    return ic;
+  }
+
+  function renderDesktopIcons() {
+    const d = byId('desktop-icons');
+    if (!d) return;
+    d.innerHTML = '';
+    desktopState.icons.forEach((id) => {
+      if (!APPS[id]) return;
+      if (iconDrag.moved && id === iconDrag.id) return; // floating copy lives in <body>
+      d.appendChild(makeIcon(id));
+    });
+  }
+
+  function selectIconNode(ic, on) {
+    document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
+    if (on && ic) ic.classList.add('sel');
+  }
+
+  function unpinIcon(id) {
+    desktopState.icons = desktopState.icons.filter((x) => x !== id);
+    saveDesktopState();
+    renderDesktopIcons();
+    notify('📌', 'Unpinned', iconLabel(APPS[id]));
+  }
+
+  function arrangeIcons() {
+    desktopState.icons = DESKTOP_APPS.slice().filter((id) => APPS[id]);
+    saveDesktopState();
+    renderDesktopIcons();
+    notify('🧲', 'Icons arranged', OS.name);
+  }
+
+  /* --- drag & drop reordering --- */
+  const iconDrag = { id: null, el: null, sx: 0, sy: 0, offX: 0, offY: 0, w: 0, moved: false, suppressClick: false };
+
+  function startIconDrag(e, id, ic) {
+    if (e.button !== 0 || iconDrag.moved) return;
+    const r = ic.getBoundingClientRect();
+    Object.assign(iconDrag, {
+      id, el: ic, sx: e.clientX, sy: e.clientY,
+      offX: e.clientX - r.left, offY: e.clientY - r.top,
+      w: r.width || 88, moved: false, suppressClick: false
+    });
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - iconDrag.sx, dy = ev.clientY - iconDrag.sy;
+      if (!iconDrag.moved && Math.hypot(dx, dy) > 6) {
+        iconDrag.moved = true;
+        iconDrag.suppressClick = true;
+        const el = iconDrag.el;
+        el.classList.add('di-drag');
+        el.style.width = iconDrag.w + 'px';
+        document.body.appendChild(el); // float above the grid
+        document.body.style.userSelect = 'none';
+      }
+      if (!iconDrag.moved) return;
+      const el = iconDrag.el;
+      el.style.left = (ev.clientX - iconDrag.offX) + 'px';
+      el.style.top = (ev.clientY - iconDrag.offY) + 'px';
+      ev.preventDefault();
+      reorderLive(iconDrag.id, ev);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+      document.body.style.userSelect = '';
+      const el = iconDrag.el;
+      const wasDragged = iconDrag.moved;
+      iconDrag.moved = false;
+      iconDrag.el = null;
+      if (wasDragged) {
+        el.classList.remove('di-drag');
+        el.remove();
+        renderDesktopIcons();
+        saveDesktopState();
+        const fresh = byId('desktop-icons').querySelector('.desktop-icon[data-app="' + iconDrag.id + '"]');
+        if (fresh) selectIconNode(fresh, true);
+        Sound.pop();
+        setTimeout(() => { iconDrag.suppressClick = false; }, 120);
+      }
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  }
+
+  function reorderLive(id, ev) {
+    const d = byId('desktop-icons');
+    const others = Array.prototype.filter.call(d.querySelectorAll('.desktop-icon'), (x) => x.dataset.app !== id);
+    let best = null, bestD = Infinity;
+    others.forEach((x) => {
+      const r = x.getBoundingClientRect();
+      if (!r.width && !r.height) return; // no layout info (headless) — skip
+      const dist = Math.hypot(r.left + r.width / 2 - ev.clientX, r.top + r.height / 2 - ev.clientY);
+      if (dist < bestD) { bestD = dist; best = x; }
+    });
+    if (!best || bestD > 320) return;
+    const from = desktopState.icons.indexOf(id);
+    const to = desktopState.icons.indexOf(best.dataset.app);
+    if (from === -1 || to === -1) return;
+    const br = best.getBoundingClientRect();
+    const after = ev.clientY > br.top + br.height / 2 || (ev.clientX > br.left + br.width / 2 && ev.clientY >= br.top);
+    const at = after ? to + 1 : to;
+    if (at === from || at === from + 1) return;
+    desktopState.icons.splice(from, 1);
+    desktopState.icons.splice(at > from ? at - 1 : at, 0, id);
+    renderDesktopIcons();
+  }
+
+  /* --- keyboard navigation --- */
+  function desktopNav(e) {
+    const d = byId('desktop-icons');
+    if (!d) return;
+    const icons = Array.prototype.slice.call(d.querySelectorAll('.desktop-icon'));
+    if (!icons.length) return;
+    const curEl = d.querySelector('.desktop-icon.sel');
+    const cur = icons.indexOf(curEl);
+    const pick = (ic) => {
+      selectIconNode(ic, true);
+      if (ic.scrollIntoView) ic.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      Sound.pop();
+    };
+    const rowsOf = () => {
+      const map = {};
+      icons.forEach((ic) => {
+        const r = ic.getBoundingClientRect();
+        const k = Math.round(r.top / 10);
+        (map[k] = map[k] || []).push(ic);
+      });
+      return Object.keys(map).map(Number).sort((a, b) => a - b).map((k) =>
+        map[k].sort((a, b) => a.getBoundingClientRect().left - b.getBoundingClientRect().left)
+      );
+    };
+    const nearX = (row, x) => {
+      let best = row[0], bd = Infinity;
+      row.forEach((ic) => { const dd = Math.abs(ic.getBoundingClientRect().left - x); if (dd < bd) { bd = dd; best = ic; } });
+      return best;
+    };
+
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      pick(icons[(cur + (e.shiftKey ? -1 : 1) + icons.length) % icons.length]);
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (cur >= 0) { e.preventDefault(); openApp(icons[cur].dataset.app); }
+      return;
+    }
+    if (e.key === 'Escape') { selectIconNode(curEl, false); return; }
+    if (!/^Arrow/.test(e.key) || cur === -1) return;
+    e.preventDefault();
+    const rows = rowsOf();
+    const ri = rows.findIndex((r) => r.includes(icons[cur]));
+    if (ri === -1) { pick(icons[0]); return; }
+    const row = rows[ri];
+    const ci = row.indexOf(icons[cur]);
+    const x = icons[cur].getBoundingClientRect().left;
+    let next = null;
+    if (e.key === 'ArrowRight') next = ci + 1 < row.length ? row[ci + 1] : (rows[ri + 1] && nearX(rows[ri + 1], x)) || null;
+    else if (e.key === 'ArrowLeft') next = ci > 0 ? row[ci - 1] : (rows[ri - 1] && nearX(rows[ri - 1], x)) || null;
+    else if (e.key === 'ArrowDown') next = rows[ri + 1] && nearX(rows[ri + 1], x);
+    else if (e.key === 'ArrowUp') next = rows[ri - 1] && nearX(rows[ri - 1], x);
+    if (next) pick(next);
+  }
+
+  function buildDesktop() {
+    renderDesktopIcons();
     document.body.addEventListener('click', () => {
-      document.querySelectorAll('.desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
+      if (iconDrag.suppressClick) return;
+      document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
     });
 
     byId('wallpaper').addEventListener('contextmenu', (e) => {
@@ -777,6 +962,8 @@
       showMenu(e.clientX, e.clientY, [
         { label: t('ctx.newNote'), icon: '📝', action: () => openApp('notes', { fresh: true }) },
         { label: t('ctx.terminal'), icon: '⬛', action: () => openApp('terminal') },
+        { label: t('ctx.arrange'), icon: '🧲', action: arrangeIcons },
+        '-',
         { label: t('ctx.wallpaper'), icon: '🖼️', action: cycleWallpaper },
         { label: t('ctx.theme'), icon: '🌓', action: toggleTheme },
         { label: t('ctx.lock'), icon: '🔒', action: lockScreen },
@@ -818,6 +1005,8 @@
     byId('tray-vol').title = t('tray.vol');
     byId('tray-batt').title = t('tray.batt');
     byId('tray-clock').title = t('tray.clock');
+    const sdBtn = byId('show-desktop');
+    if (sdBtn) sdBtn.title = t('taskbar.showDesktop');
     if (isLocked()) {
       byId('lock-hint').textContent = OS.settings.pin ? t('lock.pin') : t('lock.hint');
       byId('lock-reset').textContent = t('lock.reset');
@@ -885,6 +1074,19 @@
       if (!e.target.closest('#ctx-menu')) hideMenu();
     }, true);
 
+    /* show desktop / minimize all */
+    const sdBtn = byId('show-desktop');
+    if (sdBtn) sdBtn.addEventListener('click', () => {
+      let any = false;
+      OS.windows.forEach((w) => { if (!w.minimized) { any = true; minimizeWindow(w); } });
+      if (!any) {
+        const last = OS.tasks[OS.tasks.length - 1];
+        const w = last && OS.windows.get(last);
+        if (w && w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); focusWindow(w); }
+        else Sound.pop();
+      }
+    });
+
     /* global keyboard shortcuts */
     document.addEventListener('keydown', (e) => {
       if (isLocked()) return;
@@ -899,6 +1101,13 @@
         closeAltTab();
         byId('start-menu').classList.remove('open');
         hideMenu();
+        if (focusedWin === null) {
+          document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
+        }
+      } else if (!altTab.active && focusedWin === null && !e.altKey && !e.ctrlKey && !e.metaKey) {
+        const tgt = e.target;
+        if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT' || tgt.isContentEditable)) return;
+        desktopNav(e);
       }
     });
     document.addEventListener('keyup', (e) => {
@@ -928,6 +1137,7 @@
   window.registerApp = registerApp;
   window.openApp = openApp;
   window.createWindow = createWindow;
+  window.closeWindow = closeWindow;
   window.focusWindow = focusWindow;
   window.notify = notify;
   window.ask = ask;

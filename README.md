@@ -6,8 +6,13 @@
 
 ## ✨ Features
 
-### Desktop environment
-- Boot sequence → desktop with 15 app icons (double-click to launch, right-click to rename)
+### Interactive desktop
+- Boot sequence → desktop with **17 app icons**
+- **Drag & drop icons** to rearrange them — the grid reflows live and your layout is saved
+- **Pin / unpin** icons from the desktop (right-click → Unpin; right-click the wallpaper → Arrange icons restores the full set)
+- **Keyboard navigation** — `Tab` / `Shift+Tab` to cycle, arrow keys to roam the grid, `Enter` to launch, `Esc` to deselect
+- **Show desktop** button on the taskbar — minimizes everything, click again to restore
+- Click to select, double-click to launch, right-click to rename
 - **Lock screen** — optional 4-digit PIN, idle auto-lock, giant clock
 - Start menu with live app search · taskbar with per-app buttons, tray & live clock
 - **Alt+Tab window switcher** with app tiles · **Alt+L** to lock
@@ -91,4 +96,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v1.1.0*
+*Made with ♥ in the browser. v1.2.0*
