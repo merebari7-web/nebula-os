@@ -102,4 +102,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v1.3.1*
+*Made with ♥ in the browser. v1.3.2*
