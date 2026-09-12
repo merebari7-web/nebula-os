@@ -2,8 +2,6 @@
 
 An advanced **operating system for the web** — a full desktop environment that runs 100% inside a browser tab. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
-![Nebula OS](docs/screenshot.png)
-
 ## ✨ Features
 
 **Desktop environment**

@@ -7,7 +7,7 @@
   'use strict';
 
   const FS = window.NebulaFS.fs;
-  const GITHUB_URL = 'https://github.com'; // ← filled with your repo once it's deployed
+  const GITHUB_URL = 'https://github.com/merebari7-web/nebula-os';
 
   const TEXT_EXTS = /\.(txt|md|markdown|js|css|html|json|log|csv|sh|py|ts)$/i;
 
