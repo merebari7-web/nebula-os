@@ -7,6 +7,7 @@
   'use strict';
 
   const TASKBAR_H = 56;
+  const MENU_H = 26;
   const LS_SETTINGS = 'nebula.settings.v1';
   const LS_DESKTOP = 'nebula.desktop.v1';
 
@@ -38,7 +39,7 @@
   /* ---------- settings ---------- */
   const DEFAULT_SETTINGS = {
     wallpaper: 0,
-    accent: '#7c6cff',
+    accent: '#0a84ff',
     theme: 'dark',
     sound: true,
     reduceMotion: false,
@@ -49,11 +50,11 @@
   };
 
   const WALLPAPERS = [
-    { name: 'Nebula', css: 'radial-gradient(1100px 750px at 78% -12%, #43348f 0%, rgba(67,52,143,0) 60%), radial-gradient(900px 650px at 12% 112%, #123c5e 0%, rgba(18,60,94,0) 55%), linear-gradient(158deg, #070a18 0%, #0b1030 48%, #141a3f 100%)' },
-    { name: 'Aurora', css: 'radial-gradient(1000px 500px at 22% -8%, rgba(45,212,191,.4) 0%, rgba(45,212,191,0) 55%), radial-gradient(900px 600px at 85% 8%, rgba(16,185,129,.3) 0%, rgba(16,185,129,0) 55%), linear-gradient(180deg, #020617 0%, #062019 60%, #04140f 100%)' },
-    { name: 'Sunset', css: 'radial-gradient(900px 500px at 50% 118%, rgba(251,146,60,.55) 0%, rgba(251,146,60,0) 60%), radial-gradient(800px 500px at 82% -10%, rgba(217,70,239,.35) 0%, rgba(217,70,239,0) 55%), linear-gradient(180deg, #170b2b 0%, #3b1444 55%, #7c2d4e 100%)' },
-    { name: 'Ocean', css: 'radial-gradient(1100px 700px at 70% 120%, rgba(14,165,233,.5) 0%, rgba(14,165,233,0) 60%), radial-gradient(800px 500px at 15% -15%, rgba(34,211,238,.28) 0%, rgba(34,211,238,0) 55%), linear-gradient(180deg, #030b1d 0%, #07234a 55%, #0a3a66 100%)' },
-    { name: 'Ember', css: 'radial-gradient(1000px 650px at 20% 115%, rgba(239,68,68,.42) 0%, rgba(239,68,68,0) 60%), radial-gradient(900px 550px at 88% -12%, rgba(249,115,22,.3) 0%, rgba(249,115,22,0) 55%), linear-gradient(165deg, #160607 0%, #33100c 55%, #57200e 100%)' },
+    { name: 'Sonoma', css: 'radial-gradient(1300px 900px at 82% -10%, rgba(255,158,131,.5) 0%, rgba(255,158,131,0) 58%), radial-gradient(1100px 800px at 8% 112%, rgba(124,108,255,.45) 0%, rgba(124,108,255,0) 55%), radial-gradient(900px 700px at 32% 18%, rgba(255,196,140,.25) 0%, rgba(255,196,140,0) 50%), linear-gradient(155deg, #1c1233 0%, #45306b 40%, #8a4a6b 68%, #d97b5f 88%, #f2a97e 100%)' },
+    { name: 'Sequoia', css: 'radial-gradient(1200px 800px at 85% 112%, rgba(45,212,191,.42) 0%, rgba(45,212,191,0) 55%), radial-gradient(1000px 700px at 12% -12%, rgba(16,185,129,.3) 0%, rgba(16,185,129,0) 55%), linear-gradient(165deg, #03120f 0%, #06302a 45%, #0d5c4d 75%, #2ea98a 100%)' },
+    { name: 'Ventura', css: 'radial-gradient(1200px 850px at 75% -15%, rgba(96,165,250,.5) 0%, rgba(96,165,250,0) 60%), radial-gradient(1000px 700px at 15% 115%, rgba(192,132,252,.42) 0%, rgba(192,132,252,0) 55%), linear-gradient(150deg, #0b1030 0%, #232a6b 45%, #5b4bb5 75%, #9d7bea 100%)' },
+    { name: 'Monterey', css: 'radial-gradient(1000px 700px at 72% 118%, rgba(125,196,245,.5) 0%, rgba(125,196,245,0) 58%), radial-gradient(800px 500px at 18% -12%, rgba(56,130,246,.3) 0%, rgba(56,130,246,0) 55%), linear-gradient(180deg, #071a3a 0%, #0e3a6e 42%, #2f6db5 72%, #6db3e8 100%)' },
+    { name: 'Big Sur', css: 'radial-gradient(1000px 700px at 80% 115%, rgba(251,146,60,.5) 0%, rgba(251,146,60,0) 55%), radial-gradient(900px 600px at 12% -12%, rgba(244,114,182,.25) 0%, rgba(244,114,182,0) 55%), linear-gradient(160deg, #1a0b2e 0%, #5b2a5e 45%, #c2544f 75%, #f2935c 100%)' },
     { name: 'Void', css: 'radial-gradient(1200px 800px at 50% 50%, rgba(88,101,242,.16) 0%, rgba(88,101,242,0) 65%), linear-gradient(180deg, #04040a 0%, #08080f 60%, #0c0c16 100%)' }
   ];
 
@@ -67,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '1.2.0',
+    version: '1.3.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -80,6 +81,32 @@
   OS.saveSettings = function () {
     try { localStorage.setItem(LS_SETTINGS, JSON.stringify(OS.settings)); } catch (e) {}
   };
+
+  /* --- per-app window geometry persistence --- */
+  const LS_WINRECT = 'nebula.winrect.v1';
+  function loadWinRect(appId) {
+    if (!appId) return null;
+    const m = safeJson(localStorage.getItem(LS_WINRECT));
+    return m[appId] || null;
+  }
+  function saveWinRect(win) {
+    if (!win || !win.appId) return;
+    try {
+      const m = safeJson(localStorage.getItem(LS_WINRECT));
+      if (win.maximized) m[win.appId] = { max: true };
+      else {
+        m[win.appId] = {
+          x: Math.round(parseFloat(win.el.style.left) || 0),
+          y: Math.round(parseFloat(win.el.style.top) || 0),
+          w: Math.round(win.el.getBoundingClientRect().width || 0),
+          h: Math.round(win.el.getBoundingClientRect().height || 0)
+        };
+      }
+      const keys = Object.keys(m);
+      if (keys.length > 40) delete m[keys[0]];
+      localStorage.setItem(LS_WINRECT, JSON.stringify(m));
+    } catch (e) {}
+  }
 
   function applyWallpaper(i) {
     const wp = byId('wallpaper');
@@ -164,6 +191,11 @@
     OS.z += 1;
     win.el.style.zIndex = OS.z;
     OS.windows.forEach((w) => w.el.classList.toggle('focused', w === win));
+    const mbName = byId('mb-app-name');
+    if (mbName) {
+      const a = win.appId && APPS[win.appId];
+      mbName.textContent = a ? appTitle(a) : 'Nebula';
+    }
     updateTaskbar();
     try { win.hooks.focus && win.hooks.focus(); } catch (e) {}
   }
@@ -184,7 +216,8 @@
 
   function refreshMaxIcon(win) {
     const btn = win.el.querySelector('[data-act="max"]');
-    if (btn) btn.innerHTML = win.maximized ? ICONS.restore : ICONS.max;
+    if (btn) btn.classList.toggle('is-max', !!win.maximized);
+    saveWinRect(win);
   }
 
   function toggleMaximize(win) {
@@ -211,10 +244,15 @@
     if (!win) return;
     if (win.onClose) { try { win.onClose(win); } catch (e) {} }
     Sound.close();
+    saveWinRect(win);
     win.el.classList.add('closing');
     OS.windows.delete(id);
+    if (focusedWin === win) {
+      focusedWin = null;
+      const mbName = byId('mb-app-name');
+      if (mbName) mbName.textContent = 'Nebula';
+    }
     OS.tasks = OS.tasks.filter((x) => x !== id);
-    if (focusedWin === win) focusedWin = null;
     if (altTab.active) {
       altTab.order = altTab.order.filter((x) => x !== id);
       if (!altTab.order.length) closeAltTab();
@@ -233,23 +271,23 @@
       return existing;
     }
 
-    const W = opts.width || 640, H = opts.height || 420;
+    const saved = opts.appId ? loadWinRect(opts.appId) : null;
+    const W = (saved && saved.w) || opts.width || 640, H = (saved && saved.h) || opts.height || 420;
     const n = OS.tasks.length;
     const elWin = el('section', 'window');
     elWin.dataset.id = id;
-    elWin.style.left = (opts.x != null ? opts.x : 90 + (n % 7) * 34) + 'px';
-    elWin.style.top = (opts.y != null ? opts.y : 54 + (n % 7) * 26) + 'px';
+    elWin.style.left = (opts.x != null ? opts.x : (saved && saved.x != null ? saved.x : 90 + (n % 7) * 34)) + 'px';
+    elWin.style.top = (opts.y != null ? opts.y : (saved && saved.y != null ? saved.y : 54 + (n % 7) * 26)) + 'px';
     elWin.style.width = Math.min(W, innerWidth - 16) + 'px';
     elWin.style.height = Math.min(H, innerHeight - TASKBAR_H - 12) + 'px';
     elWin.innerHTML =
       '<header class="titlebar">' +
-        '<div class="titlebar-left"><span class="win-icon">' + (opts.icon || '🪐') + '</span>' +
-        '<span class="win-title">' + escapeHtml(opts.title || 'Window') + '</span></div>' +
         '<div class="win-controls">' +
-          '<button class="wc" data-act="min" title="Minimize" aria-label="Minimize">' + ICONS.min + '</button>' +
-          '<button class="wc" data-act="max" title="Maximize" aria-label="Maximize">' + ICONS.max + '</button>' +
-          '<button class="wc wc-close" data-act="close" title="Close" aria-label="Close">' + ICONS.close + '</button>' +
+          '<button class="wc wc-close" data-act="close" title="Close" aria-label="Close"></button>' +
+          '<button class="wc wc-min" data-act="min" title="Minimize" aria-label="Minimize"></button>' +
+          '<button class="wc wc-max" data-act="max" title="Zoom" aria-label="Zoom"></button>' +
         '</div>' +
+        '<span class="win-title">' + escapeHtml(opts.title || 'Window') + '</span>' +
       '</header>' +
       '<div class="win-body"></div>' +
       '<div class="rh rh-n"></div><div class="rh rh-s"></div><div class="rh rh-e"></div><div class="rh rh-w"></div>' +
@@ -339,7 +377,7 @@
         if (!moved) return;
         const maxX = innerWidth - 90, maxY = innerHeight - TASKBAR_H - 30;
         win.el.style.left = clamp(r.left + dx, -r.width + 110, maxX) + 'px';
-        win.el.style.top = clamp(r.top + dy, 0, maxY) + 'px';
+        win.el.style.top = clamp(r.top + dy, MENU_H, maxY) + 'px';
         showSnapPreview(snapSideOf(ev.clientX, ev.clientY));
       };
       const onUp = (ev) => {
@@ -356,6 +394,7 @@
             Object.assign(win.el.style, { left: rr.left + 'px', top: rr.top + 'px', width: rr.width + 'px', height: rr.height + 'px' });
             Sound.pop();
           }
+          saveWinRect(win);
         }
       };
       document.addEventListener('pointermove', onMove);
@@ -387,6 +426,7 @@
         const onUp = () => {
           document.removeEventListener('pointermove', onMove);
           document.removeEventListener('pointerup', onUp);
+          saveWinRect(win);
         };
         document.addEventListener('pointermove', onMove);
         document.addEventListener('pointerup', onUp);
@@ -396,22 +436,17 @@
 
   /* ---------- taskbar ---------- */
   function updateTaskbar() {
+    /* macOS dock: every app has a slot; dots mark running apps */
     const bar = byId('taskbar-apps');
     if (!bar) return;
-    bar.innerHTML = '';
-    OS.tasks.forEach((id) => {
-      const w = OS.windows.get(id);
-      if (!w) return;
-      const b = el('button', 'task');
-      if (focusedWin === w && !w.minimized) b.classList.add('focused');
-      if (w.minimized) b.classList.add('min');
-      b.innerHTML = appTile(w, 'task-tile') + '<span class="task-label">' + escapeHtml(w.title) + '</span>';
-      b.addEventListener('click', () => {
-        if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); focusWindow(w); }
-        else if (focusedWin === w) minimizeWindow(w);
-        else focusWindow(w);
-      });
-      bar.appendChild(b);
+    bar.querySelectorAll('.dock-icon[data-app]').forEach((b) => {
+      const appId = b.dataset.app;
+      const w = OS.windows.get(appId);
+      b.classList.toggle('running', !!w);
+      b.classList.toggle('min', !!w && w.minimized);
+      b.classList.toggle('focused', !!w && w === focusedWin && !w.minimized);
+      const tip = b.querySelector('.dock-tip');
+      if (tip) tip.textContent = w && w.title ? w.title : (APPS[appId] ? appTitle(APPS[appId]) : appId);
     });
   }
 
@@ -816,6 +851,111 @@
     notify('🧲', 'Icons arranged', OS.name);
   }
 
+  function showDesktopAction() {
+    let any = false;
+    OS.windows.forEach((w) => { if (!w.minimized) { any = true; minimizeWindow(w); } });
+    if (!any) {
+      const last = OS.tasks[OS.tasks.length - 1];
+      const w = last && OS.windows.get(last);
+      if (w && w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); focusWindow(w); }
+      else Sound.pop();
+    }
+  }
+
+  /* ---------- dock (macOS style) ---------- */
+  const DOCK_APPS = DESKTOP_APPS; // same order as the desktop
+
+  function buildDock() {
+    const bar = byId('taskbar-apps');
+    if (!bar) return;
+    bar.innerHTML = '';
+    DOCK_APPS.forEach((id) => {
+      const a = APPS[id];
+      if (!a) return;
+      const b = el('button', 'dock-icon');
+      b.dataset.app = id;
+      b.title = iconLabel(a);
+      b.setAttribute('aria-label', iconLabel(a));
+      b.innerHTML = appTile(a, 'dock-tile') + '<span class="dock-tip">' + escapeHtml(iconLabel(a)) + '</span><span class="dock-dot"></span>';
+      b.addEventListener('click', () => openApp(id));
+      bar.appendChild(b);
+    });
+
+    /* icon magnification — CSS transforms only, rAF-throttled */
+    const dock = byId('dock');
+    if (!dock) return;
+    let mRaf = null;
+    dock.addEventListener('pointermove', (e) => {
+      if (OS.settings.reduceMotion || mRaf || e.pointerType === 'touch') return;
+      mRaf = requestAnimationFrame(() => {
+        mRaf = null;
+        dock.querySelectorAll('.dock-icon').forEach((ic) => {
+          const r = ic.getBoundingClientRect();
+          if (!r.width) return;
+          const dx = e.clientX - (r.left + r.width / 2);
+          const sigma = 62;
+          const sc = 1 + 0.55 * Math.exp(-(dx * dx) / (2 * sigma * sigma));
+          ic.style.transform = 'translateY(' + (-(sc - 1) * 22).toFixed(1) + 'px) scale(' + sc.toFixed(3) + ')';
+        });
+      });
+    });
+    dock.addEventListener('pointerleave', () => {
+      dock.querySelectorAll('.dock-icon').forEach((ic) => { ic.style.transform = ''; });
+    });
+  }
+
+  /* ---------- menu bar (macOS style) ---------- */
+  function buildMenuBar() {
+    const items = Array.prototype.slice.call(document.querySelectorAll('#menubar .mb-item[data-menu]'));
+    if (!items.length) return;
+    const closeMenus = () => items.forEach((it) => it.classList.remove('open'));
+    const openMenu = (it) => { closeMenus(); it.classList.add('open'); };
+    items.forEach((it) => {
+      it.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (it.classList.contains('open')) closeMenus();
+        else openMenu(it);
+      });
+      it.addEventListener('mouseenter', () => {
+        if (items.some((x) => x.classList.contains('open')) && !it.classList.contains('open')) openMenu(it);
+      });
+      it.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); it.click(); }
+      });
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('#menubar')) closeMenus();
+    }, true);
+
+    const acts = {
+      about: () => openApp('about'),
+      settings: () => openApp('settings'),
+      lock: () => lockScreen(),
+      restart: () => location.reload(),
+      shutdown: () => { Sound.close(); closeMenus(); byId('shutdown').classList.remove('hidden'); },
+      newNote: () => openApp('notes', { fresh: true }),
+      terminal: () => openApp('terminal'),
+      code: () => openApp('code'),
+      files: () => openApp('files'),
+      wallpaper: () => cycleWallpaper(),
+      theme: () => toggleTheme(),
+      arrange: () => arrangeIcons(),
+      showDesktop: () => showDesktopAction(),
+      min: () => { if (focusedWin) minimizeWindow(focusedWin); },
+      zoom: () => { if (focusedWin) toggleMaximize(focusedWin); },
+      showAll: () => OS.windows.forEach((w) => { if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); } })
+    };
+    document.querySelectorAll('.mb-mi').forEach((b) => {
+      b.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeMenus();
+        const fn = acts[b.dataset.act];
+        if (fn) fn();
+      });
+    });
+    OS._closeMbMenus = closeMenus;
+  }
+
   /* --- drag & drop reordering --- */
   const iconDrag = { id: null, el: null, sx: 0, sy: 0, offX: 0, offY: 0, w: 0, moved: false, suppressClick: false };
 
@@ -1025,6 +1165,18 @@
       }
     });
     updateTaskbar();
+    document.querySelectorAll('#menubar [data-i18n]').forEach((n) => { n.textContent = t(n.dataset.i18n); });
+    document.querySelectorAll('#dock .dock-icon[data-app]').forEach((b) => {
+      const a = APPS[b.dataset.app];
+      if (a) {
+        const tip = b.querySelector('.dock-tip');
+        if (tip) tip.textContent = iconLabel(a);
+        b.title = iconLabel(a);
+        b.setAttribute('aria-label', iconLabel(a));
+      }
+    });
+    const lp = byId('start-btn');
+    if (lp) { lp.title = t('dock.launchpad'); lp.setAttribute('aria-label', t('dock.launchpad')); }
     if (OS._refreshSettings) OS._refreshSettings();
   }
   OS.setLanguage = function (lang) {
@@ -1061,6 +1213,8 @@
     applyI18n();
     buildLock();
     buildParallax();
+    buildMenuBar();
+    buildDock();
     buildDesktop();
     buildStartMenu();
     tickClock();
@@ -1074,18 +1228,9 @@
       if (!e.target.closest('#ctx-menu')) hideMenu();
     }, true);
 
-    /* show desktop / minimize all */
+    /* show desktop / minimize all (dock edge) */
     const sdBtn = byId('show-desktop');
-    if (sdBtn) sdBtn.addEventListener('click', () => {
-      let any = false;
-      OS.windows.forEach((w) => { if (!w.minimized) { any = true; minimizeWindow(w); } });
-      if (!any) {
-        const last = OS.tasks[OS.tasks.length - 1];
-        const w = last && OS.windows.get(last);
-        if (w && w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); focusWindow(w); }
-        else Sound.pop();
-      }
-    });
+    if (sdBtn) sdBtn.addEventListener('click', () => showDesktopAction());
 
     /* global keyboard shortcuts */
     document.addEventListener('keydown', (e) => {
@@ -1101,9 +1246,16 @@
         closeAltTab();
         byId('start-menu').classList.remove('open');
         hideMenu();
+        if (OS._closeMbMenus) OS._closeMbMenus();
         if (focusedWin === null) {
           document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
         }
+      } else if ((e.metaKey || e.ctrlKey) && !e.altKey) {
+        const k = e.key.toLowerCase();
+        if (k === 'q' && e.ctrlKey && e.metaKey) { e.preventDefault(); lockScreen(); return; }
+        if (k === 'n') { e.preventDefault(); openApp('notes', { fresh: true }); }
+        else if (k === 't') { e.preventDefault(); openApp('terminal'); }
+        else if (k === 'd') { e.preventDefault(); cycleWallpaper(); }
       } else if (!altTab.active && focusedWin === null && !e.altKey && !e.ctrlKey && !e.metaKey) {
         const tgt = e.target;
         if (tgt && (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT' || tgt.isContentEditable)) return;

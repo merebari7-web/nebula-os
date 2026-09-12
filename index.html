@@ -28,20 +28,83 @@
       </div>
       <div class="boot-bar-wrap"><div id="boot-bar"></div></div>
       <p class="boot-sub" id="boot-sub">Starting your universe…</p>
-      <p class="boot-ver">v1.2.0 · web build · 8 languages</p>
+      <p class="boot-ver">v1.3.0 · web build · 8 languages</p>
     </div>
   </div>
 
   <!-- ============ DESKTOP ============ -->
   <div id="desktop" class="hidden">
     <div id="wallpaper" class="wallpaper"></div>
+
+    <!-- macOS-style menu bar -->
+    <header id="menubar">
+      <div class="mb-left">
+        <div id="mb-apple" class="mb-item mb-apple" data-menu role="button" tabindex="0" aria-label="Nebula menu" title="Nebula">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.7 12.9c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.86-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3.1 2.4 1.2-.05 1.7-.8 3.2-.8s1.9.8 3.2.77c1.3-.02 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.03-.01-2.5-1-2.5-3.9zM14.4 5.6c.7-.8 1.1-1.9 1-3-1 0-2.1.65-2.8 1.45-.6.7-1.2 1.85-1 2.9 1.1.1 2.2-.55 2.8-1.35z"/></svg>
+          <div class="mb-menu">
+            <button class="mb-mi" data-act="about"><span data-i18n="ctx.about">About Nebula OS</span></button>
+            <div class="mb-sep"></div>
+            <button class="mb-mi" data-act="settings"><span data-i18n="app.settings">Settings…</span></button>
+            <div class="mb-sep"></div>
+            <button class="mb-mi" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span><span class="mb-key">⌃⌘Q</span></button>
+            <button class="mb-mi" data-act="restart"><span data-i18n="start.restart">Restart…</span></button>
+            <button class="mb-mi" data-act="shutdown"><span data-i18n="start.shutdown">Shut Down…</span></button>
+          </div>
+        </div>
+        <span class="mb-item mb-appname" id="mb-app-name">Nebula</span>
+        <div class="mb-item" data-menu role="button" tabindex="0" aria-label="File menu"><span class="mb-label" data-i18n="mb.file">File</span>
+          <div class="mb-menu">
+            <button class="mb-mi" data-act="newNote"><span data-i18n="ctx.newNote">New Note</span><span class="mb-key">⌘N</span></button>
+            <button class="mb-mi" data-act="terminal"><span data-i18n="ctx.terminal">Open Terminal</span><span class="mb-key">⌘T</span></button>
+            <button class="mb-mi" data-act="code"><span data-i18n="app.code">Code Editor</span></button>
+            <button class="mb-mi" data-act="files"><span data-i18n="app.files">Files</span></button>
+          </div>
+        </div>
+        <div class="mb-item" data-menu role="button" tabindex="0" aria-label="Edit menu"><span class="mb-label" data-i18n="mb.edit">Edit</span>
+          <div class="mb-menu">
+            <button class="mb-mi" data-act="wallpaper"><span data-i18n="ctx.wallpaper">Next wallpaper</span><span class="mb-key">⌘D</span></button>
+            <button class="mb-mi" data-act="theme"><span data-i18n="ctx.theme">Toggle theme</span></button>
+            <div class="mb-sep"></div>
+            <button class="mb-mi" data-act="arrange"><span data-i18n="ctx.arrange">Arrange icons</span></button>
+          </div>
+        </div>
+        <div class="mb-item" data-menu role="button" tabindex="0" aria-label="View menu"><span class="mb-label" data-i18n="mb.view">View</span>
+          <div class="mb-menu">
+            <button class="mb-mi" data-act="showDesktop"><span data-i18n="taskbar.showDesktop">Show desktop</span></button>
+            <button class="mb-mi" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span></button>
+          </div>
+        </div>
+        <div class="mb-item" data-menu role="button" tabindex="0" aria-label="Window menu"><span class="mb-label" data-i18n="mb.window">Window</span>
+          <div class="mb-menu">
+            <button class="mb-mi" data-act="min"><span data-i18n="mb.min">Minimize</span></button>
+            <button class="mb-mi" data-act="zoom"><span data-i18n="mb.zoom">Zoom</span></button>
+            <div class="mb-sep"></div>
+            <button class="mb-mi" data-act="showAll"><span data-i18n="mb.showAll">Show All</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="mb-right">
+        <span class="mb-tray-ic" id="tray-wifi" title="Connected — nebula-net">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 8.5a15 15 0 0 1 19 0"/><path d="M5.5 12a10.5 10.5 0 0 1 13 0"/><path d="M8.7 15.4a6 6 0 0 1 6.6 0"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
+        </span>
+        <span class="mb-tray-ic" id="tray-vol" title="Sound">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
+        </span>
+        <span class="mb-tray-ic" id="tray-batt" title="Battery 87%">
+          <svg width="22" height="13" viewBox="0 0 26 14" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="19" height="11" rx="2.5" stroke-width="1.6"/><rect x="4" y="4" width="11" height="6" rx="1" fill="currentColor" stroke="none"/><path d="M23.5 5v4" stroke-width="2" stroke-linecap="round"/></svg>
+        </span>
+        <button class="mb-clock" id="tray-clock" title="Local time">
+          <span class="mb-date" id="tray-date"></span><span id="tray-time">--:--</span>
+        </button>
+      </div>
+    </header>
     <div id="desktop-icons"></div>
     <div id="windows"></div>
     <div id="snap-preview" class="snap-preview"></div>
 
-    <!-- Start menu -->
+    <!-- Launchpad (app grid) -->
     <div id="start-menu" class="start-menu">
-      <input id="start-search" class="start-search" placeholder="Search apps…" spellcheck="false" autocomplete="off">
+      <input id="start-search" class="start-search" placeholder="Search" spellcheck="false" autocomplete="off">
       <div id="start-grid" class="start-grid"></div>
       <div class="start-foot">
         <div class="start-user">
@@ -56,28 +119,15 @@
       </div>
     </div>
 
-    <!-- Taskbar -->
+    <!-- Dock -->
     <footer id="taskbar">
-      <button id="start-btn" class="start-btn" title="Start" aria-label="Start menu">
-        <span class="start-orb"></span>
-      </button>
-      <div class="taskbar-apps" id="taskbar-apps"></div>
-      <button id="show-desktop" class="show-desktop" title="Show desktop" aria-label="Show desktop">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 20.5h6"/><path d="M12 17v3.5"/></svg>
-      </button>
-      <div class="tray">
-        <span class="tray-ic" id="tray-wifi" title="Connected — nebula-net">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 8.5a15 15 0 0 1 19 0"/><path d="M5.5 12a10.5 10.5 0 0 1 13 0"/><path d="M8.7 15.4a6 6 0 0 1 6.6 0"/><circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none"/></svg>
-        </span>
-        <span class="tray-ic" id="tray-vol" title="Sound">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor" stroke="none"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg>
-        </span>
-        <span class="tray-ic" id="tray-batt" title="Battery 87%">
-          <svg width="24" height="14" viewBox="0 0 26 14" fill="none" stroke="currentColor"><rect x="1.5" y="1.5" width="19" height="11" rx="2.5" stroke-width="1.6"/><rect x="4" y="4" width="11" height="6" rx="1" fill="currentColor" stroke="none"/><path d="M23.5 5v4" stroke-width="2" stroke-linecap="round"/></svg>
-        </span>
-        <button class="tray-clock" id="tray-clock" title="Local time">
-          <span id="tray-time">--:--</span><small id="tray-date"></small>
+      <div id="dock">
+        <button id="start-btn" class="dock-icon" title="Launchpad" aria-label="Launchpad">
+          <span class="dock-tile lp-tile">🚀</span><span class="dock-tip">Launchpad</span>
         </button>
+        <div class="dock-apps" id="taskbar-apps"></div>
+        <div class="dock-sep"></div>
+        <div id="show-desktop" class="dock-edge" title="Show desktop" role="button" aria-label="Show desktop"></div>
       </div>
     </footer>
 

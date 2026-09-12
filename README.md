@@ -1,23 +1,29 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — window manager, virtual filesystem, live weather, live maps, YouTube player, code editor, beat sequencer, 8 languages, RTL support. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, virtual filesystem, live weather, live maps, YouTube player, code editor, beat sequencer, 8 languages, RTL support. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
 ## ✨ Features
 
+### macOS-style shell
+- **Top menu bar** — Apple menu, File / Edit / View / Window menus (all with real actions), right-side status icons and live clock; hover-switches between open menus, `Esc` closes
+- **Dock** — frosted glass, **icon magnification on hover** (CSS transforms, rAF-throttled), running-app indicator dots, tooltips, Launchpad rocket, and a **show-desktop edge** (minimize all / click again to restore)
+- **Launchpad** — app grid with live search, opened from the dock
+- **Windows with traffic lights** — red/yellow/green controls with hover glyphs, centered titles, rounded corners; **window positions persist** in localStorage and are restored on relaunch
+- Sonoma/Sequoia-style gradient wallpapers · macOS blue accent · top-right notifications
+- Real shortcuts: `⌘/Ctrl+N` new note · `⌘/Ctrl+T` terminal · `⌘/Ctrl+D` next wallpaper · `⌃⌘Q` lock
+
 ### Interactive desktop
-- Boot sequence → desktop with **17 app icons**
+- Boot sequence → desktop with **17 app icons** (right-aligned, like macOS)
 - **Drag & drop icons** to rearrange them — the grid reflows live and your layout is saved
 - **Pin / unpin** icons from the desktop (right-click → Unpin; right-click the wallpaper → Arrange icons restores the full set)
 - **Keyboard navigation** — `Tab` / `Shift+Tab` to cycle, arrow keys to roam the grid, `Enter` to launch, `Esc` to deselect
-- **Show desktop** button on the taskbar — minimizes everything, click again to restore
 - Click to select, double-click to launch, right-click to rename
 - **Lock screen** — optional 4-digit PIN, idle auto-lock, giant clock
-- Start menu with live app search · taskbar with per-app buttons, tray & live clock
 - **Alt+Tab window switcher** with app tiles · **Alt+L** to lock
-- Parallax starfield wallpaper (respects reduce-motion)
-- Context menus, toast notifications, glassy modal dialogs
+- Parallax wallpaper (respects reduce-motion)
+- Context menus, macOS-style notifications, glassy modal dialogs
 
 ### Window manager (`nebwm`)
 - Drag by title bar (double-click to maximize)
@@ -96,4 +102,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v1.2.0*
+*Made with ♥ in the browser. v1.3.0*
