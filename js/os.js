@@ -431,7 +431,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.8.0',
+    version: '2.9.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -615,10 +615,12 @@
         e.style.left = r.left + 'px'; e.style.top = r.top + 'px';
         e.style.width = r.width + 'px'; e.style.height = r.height + 'px';
       }
+      announce(t('flow.restored'));
     } else {
       win.lastRect = e.getBoundingClientRect();
       win.maximized = true;
       e.classList.add('maximized');
+      announce(t('flow.maximized'));
     }
     refreshMaxIcon(win);
     Sound.pop();
@@ -744,12 +746,55 @@
     s.classList.add('on');
   }
   function hideSnapPreview() { snapEl().classList.remove('on'); }
+  function snapWin(win, side) {
+    if (!win || !side) return;
+    const e = win.el;
+    if (win.maximized) {
+      win.maximized = false;
+      e.classList.remove('maximized');
+      refreshMaxIcon(win);
+    } else if (!win.lastRect) {
+      win.lastRect = { left: parseFloat(e.style.left) || 0, top: parseFloat(e.style.top) || 0, width: parseFloat(e.style.width) || 420, height: parseFloat(e.style.height) || 320 };
+    }
+    const r = snapRect(side);
+    Object.assign(e.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
+    announce(t('flow.snapped').replace('%s', t(side === 'left' ? 'flow.left' : 'flow.right')));
+    Sound.pop();
+  }
+  function unSnap(win) {
+    if (!win) return;
+    if (win.maximized) { toggleMaximize(win); return; }
+    const r = win.lastRect;
+    if (!r) return;
+    const e = win.el;
+    e.style.left = r.left + 'px'; e.style.top = r.top + 'px';
+    e.style.width = r.width + 'px'; e.style.height = r.height + 'px';
+    announce(t('flow.restored'));
+    Sound.pop();
+  }
+  function altSnap(win, key) {
+    if (key === 'ArrowLeft') snapWin(win, 'left');
+    else if (key === 'ArrowRight') snapWin(win, 'right');
+    else if (key === 'ArrowUp') { if (win && !win.maximized) toggleMaximize(win); }
+    else if (key === 'ArrowDown') { if (win) { if (win.maximized) toggleMaximize(win); else unSnap(win); } }
+  }
+  OS.snap = {
+    left: () => { if (focusedWin) snapWin(focusedWin, 'left'); },
+    right: () => { if (focusedWin) snapWin(focusedWin, 'right'); },
+    max: () => { if (focusedWin && !focusedWin.maximized) toggleMaximize(focusedWin); },
+    restore: () => { if (focusedWin) { if (focusedWin.maximized) toggleMaximize(focusedWin); else unSnap(focusedWin); } }
+  };
 
   function makeDraggable(win) {
     const bar = win.el.querySelector('.titlebar');
     bar.setAttribute('tabindex', '0');
     bar.setAttribute('aria-label', t('a11y.titlebar'));
     bar.addEventListener('keydown', (e) => {
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        e.preventDefault(); e.stopPropagation();
+        altSnap(win, e.key);
+        return;
+      }
       if (win.maximized) return;
       const step = 24;
       const r = win.el.getBoundingClientRect();
@@ -804,12 +849,7 @@
         hideSnapPreview();
         if (moved) {
           const side = snapSideOf(ev.clientX, ev.clientY);
-          if (side) {
-            win.lastRect = { left: parseFloat(win.el.style.left), top: parseFloat(win.el.style.top), width: r.width, height: r.height };
-            const rr = snapRect(side);
-            Object.assign(win.el.style, { left: rr.left + 'px', top: rr.top + 'px', width: rr.width + 'px', height: rr.height + 'px' });
-            Sound.pop();
-          }
+          if (side) snapWin(win, side);
           saveWinRect(win);
         }
       };
@@ -1077,7 +1117,9 @@
         [t('help.resize'), 'Shift + ← → ↑ ↓'],
         [t('help.menus'), '← → ↑ ↓ + Enter / Esc'],
         [t('help.min'), 'Window menu'],
-        [t('help.tour'), 'Esc']
+        [t('help.tour'), 'Esc'],
+        [t('flow.snapK'), 'Alt + ← →'],
+        [t('flow.maxK'), 'Alt + ↑ ↓']
       ] }
     ];
   }
@@ -1726,6 +1768,7 @@
     /* a11y: full arrow-key menu navigation */
     document.addEventListener('keydown', (e) => {
       if (isLocked() || byId('tour')) return;
+      if (e.altKey) return;
       const openIt = items.find((x) => x.classList.contains('open'));
       if (!openIt) return;
       const its = Array.prototype.slice.call(openIt.querySelectorAll('.mb-mi'));
@@ -1770,6 +1813,10 @@
       mission: () => toggleMission(),
       min: () => { if (focusedWin) minimizeWindow(focusedWin); },
       zoom: () => { if (focusedWin) toggleMaximize(focusedWin); },
+      snapLeft: () => { if (focusedWin) snapWin(focusedWin, 'left'); },
+      snapRight: () => { if (focusedWin) snapWin(focusedWin, 'right'); },
+      snapMax: () => { if (focusedWin && !focusedWin.maximized) toggleMaximize(focusedWin); },
+      snapRestore: () => { if (focusedWin) { if (focusedWin.maximized) toggleMaximize(focusedWin); else unSnap(focusedWin); } },
       showAll: () => OS.windows.forEach((w) => { if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); } })
     };
     document.querySelectorAll('.mb-mi').forEach((b) => {
@@ -2045,7 +2092,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.8.0');
+    Audit.log('system.boot', 'Nebula OS v2.9.0');
     OS.applySettings();
     applyI18n();
     buildLock();
@@ -2089,6 +2136,10 @@
         return;
       }
       if (e.key === '?') { e.preventDefault(); helpOpen(); return; }
+      if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+        const w = focusedWin;
+        if (w && !w.minimized) { e.preventDefault(); altSnap(w, e.key); return; }
+      }
       if (e.altKey && e.key === 'Tab') {
         e.preventDefault();
         if (!altTab.active) openAltTab();

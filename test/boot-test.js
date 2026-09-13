@@ -108,7 +108,7 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.8.0', 'OS booted at v2.8.0');
+  ok(window.OS && window.OS.version === '2.9.0', 'OS booted at v2.9.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
   ok(Object.keys(window.APPS).length === 27, '27 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
@@ -158,7 +158,7 @@ function buildApk(pkg, ver) {
   /* ---------- menubar: roles + arrow-key navigation ---------- */
   console.log('--- menubar a11y ---');
   ok(document.querySelectorAll('.mb-menu[role="menu"]').length === 5, '5 menubar menus have role=menu');
-  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 22, '22 menubar items have role=menuitem');
+  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 26, '26 menubar items have role=menuitem');
   const fileMenu = document.querySelector('#menubar .mb-item[data-menu]');
   fileMenu.click();
   await sleep(60);
@@ -682,6 +682,40 @@ function buildApk(pkg, ver) {
   window.OS.remind.run();
   await sleep(120);
   ok(toasts2.children.length === n1, 'no duplicate reminder same day');
+
+  /* ---------- flow: keyboard + menu snap ---------- */
+  console.log('--- flow snap ---');
+  window.openApp('notes');
+  await sleep(140);
+  const flW = window.OS.windows.get('notes');
+  ok(!!flW, 'flow: window opens');
+  ok(!!window.OS.snap, 'OS.snap exposed');
+  flW.el.querySelector('.titlebar').dispatchEvent(new window.MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 200, clientY: 30 }));
+  flW.el.querySelector('.titlebar').dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true, button: 0, clientX: 200, clientY: 30 }));
+  ok(flW === document.activeElement || !!flW, 'titlebar click focuses window');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowLeft', altKey: true, bubbles: true }));
+  await sleep(60);
+  let st = flW.el.style;
+  ok(parseFloat(st.width) === window.innerWidth / 2 && parseFloat(st.left) === 0, 'Alt+Left snaps to left half');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', altKey: true, bubbles: true }));
+  await sleep(60);
+  ok(parseFloat(st.left) === window.innerWidth / 2, 'Alt+Right snaps to right half');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowUp', altKey: true, bubbles: true }));
+  await sleep(60);
+  ok(flW.maximized === true && flW.el.classList.contains('maximized'), 'Alt+Up maximizes');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', altKey: true, bubbles: true }));
+  await sleep(60);
+  ok(flW.maximized === false, 'Alt+Down restores from maximized');
+  const winMenuEl = document.querySelector('#menubar [aria-label="Window menu"]');
+  winMenuEl.click();
+  await sleep(80);
+  winMenuEl.querySelector('[data-act="snapLeft"]').click();
+  await sleep(80);
+  ok(parseFloat(flW.el.style.left) === 0 && parseFloat(flW.el.style.width) === window.innerWidth / 2, 'Window menu > Snap Left works');
+  winMenuEl.click();
+  await sleep(60);
+  window.closeWindow('notes');
+  await sleep(80);
 
   /* ---------- backup (last: restore path reloads after 500ms) ---------- */
   console.log('--- backup ---');

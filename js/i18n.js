@@ -259,7 +259,18 @@
       'rem.due': '%s is due today',
       'rem.late': '%s is overdue (due %s)',
       'note.pub': 'Publish HTML',
-      'note.pubbed': 'HTML page exported'
+      'note.pubbed': 'HTML page exported',
+      'flow.left': 'left half',
+      'flow.right': 'right half',
+      'flow.snapped': 'Window snapped to the %s.',
+      'flow.maximized': 'Window maximized.',
+      'flow.restored': 'Window restored.',
+      'flow.mLeft': 'Snap Left',
+      'flow.mRight': 'Snap Right',
+      'flow.mMax': 'Maximize',
+      'flow.mRestore': 'Restore',
+      'flow.snapK': 'Snap focused window',
+      'flow.maxK': 'Maximize / restore focused window'
     },
 
     es: {
@@ -515,7 +526,18 @@
       'rem.due': '%s vence hoy',
       'rem.late': '%s está atrasada (vencía el %s)',
       'note.pub': 'Publicar HTML',
-      'note.pubbed': 'Página HTML exportada'
+      'note.pubbed': 'Página HTML exportada',
+      'flow.left': 'mitad izquierda',
+      'flow.right': 'mitad derecha',
+      'flow.snapped': 'Ventana acoplada a la %s.',
+      'flow.maximized': 'Ventana maximizada.',
+      'flow.restored': 'Ventana restaurada.',
+      'flow.mLeft': 'Acoplar a la izquierda',
+      'flow.mRight': 'Acoplar a la derecha',
+      'flow.mMax': 'Maximizar',
+      'flow.mRestore': 'Restaurar',
+      'flow.snapK': 'Acoplar la ventana enfocada',
+      'flow.maxK': 'Maximizar / restaurar la ventana enfocada'
     },
 
     fr: {
@@ -771,7 +793,18 @@
       'rem.due': '%s est à faire aujourd\'hui',
       'rem.late': '%s est en retard (échéance %s)',
       'note.pub': 'Publier en HTML',
-      'note.pubbed': 'Page HTML exportée'
+      'note.pubbed': 'Page HTML exportée',
+      'flow.left': 'moitié gauche',
+      'flow.right': 'moitié droite',
+      'flow.snapped': 'Fenêtre collée sur la %s.',
+      'flow.maximized': 'Fenêtre agrandie.',
+      'flow.restored': 'Fenêtre restaurée.',
+      'flow.mLeft': 'Coller à gauche',
+      'flow.mRight': 'Coller à droite',
+      'flow.mMax': 'Agrandir',
+      'flow.mRestore': 'Restaurer',
+      'flow.snapK': 'Coller la fenêtre ciblée',
+      'flow.maxK': 'Agrandir / restaurer la fenêtre ciblée'
     },
 
     de: {
@@ -1027,7 +1060,18 @@
       'rem.due': '%s ist heute fällig',
       'rem.late': '%s ist überfällig (fällig am %s)',
       'note.pub': 'Als HTML veröffentlichen',
-      'note.pubbed': 'HTML-Seite exportiert'
+      'note.pubbed': 'HTML-Seite exportiert',
+      'flow.left': 'linke Hälfte',
+      'flow.right': 'rechte Hälfte',
+      'flow.snapped': 'Fenster an die %s angefügt.',
+      'flow.maximized': 'Fenster maximiert.',
+      'flow.restored': 'Fenster wiederhergestellt.',
+      'flow.mLeft': 'Nach links andocken',
+      'flow.mRight': 'Nach rechts andocken',
+      'flow.mMax': 'Maximieren',
+      'flow.mRestore': 'Wiederherstellen',
+      'flow.snapK': 'Fokussiertes Fenster andocken',
+      'flow.maxK': 'Fokussiertes Fenster maximieren / wiederherstellen'
     },
 
     pt: {
@@ -1283,7 +1327,18 @@
       'rem.due': '%s vence hoje',
       'rem.late': '%s está atrasada (vencia em %s)',
       'note.pub': 'Publicar HTML',
-      'note.pubbed': 'Página HTML exportada'
+      'note.pubbed': 'Página HTML exportada',
+      'flow.left': 'metade esquerda',
+      'flow.right': 'metade direita',
+      'flow.snapped': 'Janela ancorada na %s.',
+      'flow.maximized': 'Janela maximizada.',
+      'flow.restored': 'Janela restaurada.',
+      'flow.mLeft': 'Ancorar à esquerda',
+      'flow.mRight': 'Ancorar à direita',
+      'flow.mMax': 'Maximizar',
+      'flow.mRestore': 'Restaurar',
+      'flow.snapK': 'Ancorar a janela focada',
+      'flow.maxK': 'Maximizar / restaurar a janela focada'
     },
 
     ja: {
@@ -1539,7 +1594,18 @@
       'rem.due': '%s が今日期限です',
       'rem.late': '%s が期限超過（期日 %s）',
       'note.pub': 'HTML として公開',
-      'note.pubbed': 'HTML ページをエクスポート'
+      'note.pubbed': 'HTML ページをエクスポート',
+      'flow.left': '左半分',
+      'flow.right': '右半分',
+      'flow.snapped': 'ウィンドウを%sにスナップしました。',
+      'flow.maximized': 'ウィンドウを最大化しました。',
+      'flow.restored': 'ウィンドウを復元しました。',
+      'flow.mLeft': '左にスナップ',
+      'flow.mRight': '右にスナップ',
+      'flow.mMax': '最大化',
+      'flow.mRestore': '元に戻す',
+      'flow.snapK': 'フォーカス中のウィンドウをスナップ',
+      'flow.maxK': 'フォーカス中のウィンドウの最大化 / 復元'
     },
 
     hi: {
@@ -1795,7 +1861,18 @@
       'rem.due': '%s आज समाप्त होता है',
       'rem.late': '%s पिछड़ा है (समाप्ति %s)',
       'note.pub': 'HTML प्रकाशित करें',
-      'note.pubbed': 'HTML पृष्ठ निर्यात हुआ'
+      'note.pubbed': 'HTML पृष्ठ निर्यात हुआ',
+      'flow.left': 'बाईं आधा',
+      'flow.right': 'दाईं आधा',
+      'flow.snapped': 'विंडो %s पर स्नैप हुई।',
+      'flow.maximized': 'विंडो अधिकतम।',
+      'flow.restored': 'विंडो बहाल हुई।',
+      'flow.mLeft': 'बाएं स्नैप',
+      'flow.mRight': 'दाएं स्नैप',
+      'flow.mMax': 'अधिकतम करें',
+      'flow.mRestore': 'पुनर्स्थापित करें',
+      'flow.snapK': 'फोकस वाली विंडो स्नैप करें',
+      'flow.maxK': 'फोकस वाली विंडो अधिकतम / पुनर्स्थापित करें'
     },
 
     ar: {
@@ -2051,7 +2128,18 @@
       'rem.due': '%s مستحقة اليوم',
       'rem.late': '%s متأخرة (تستحق في %s)',
       'note.pub': 'نشر HTML',
-      'note.pubbed': 'تم تصدير صفحة HTML'
+      'note.pubbed': 'تم تصدير صفحة HTML',
+      'flow.left': 'النصف الأيسر',
+      'flow.right': 'النصف الأيمن',
+      'flow.snapped': 'تم تثبيت النافذة على %s.',
+      'flow.maximized': 'تم تعظيم النافذة.',
+      'flow.restored': 'تمت استعادة النافذة.',
+      'flow.mLeft': 'تثبيت يساراً',
+      'flow.mRight': 'تثبيت يميناً',
+      'flow.mMax': 'تعميم',
+      'flow.mRestore': 'استعادة',
+      'flow.snapK': 'تثبيت النافذة المحددة',
+      'flow.maxK': 'تعميم / استعادة النافذة المحددة'
     }
   };
 

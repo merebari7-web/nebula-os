@@ -262,7 +262,7 @@ function resolvePath(cwd, arg) {
                 break;
               }
               case 'uname':
-                print('Nebula 2.8.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.9.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -1512,6 +1512,8 @@ function resolvePath(cwd, arg) {
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
+              '<div><span>New in 2.9</span><b>Window Flow: keyboard + menu snapping (Alt+← → ↑ ↓) with SR announcements</b></div>' +
+              '<div><span>New in 2.8</span><b>Today widget · Task due/overdue reminders · Notes publish as HTML</b></div>' +
               '<div><span>New in 2.5</span><b>Contacts (vCard/CSV) · Music (local audio) · Backup (one-file restore) · Onboarding tour</b></div>' +
               '<div><span>New in 2.6</span><b>Tasks (due dates · priorities) · Budget (income/expense ledger) · Shortcuts reference (press ?)</b></div>' +
               '<div><span>New in 2.7</span><b>Calendar shows task due-dates · Notes markdown preview · Budget CSV in/out · Spotlight finds notes, contacts, tasks &amp; budget</b></div>' +

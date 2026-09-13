@@ -23,6 +23,11 @@
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
 
+### 🌊 Flow Edition (v2.9)
+- **Window Flow** — snap any window with the **keyboard or the Window menu**: Alt+← / Alt+→ for half-screen, Alt+↑ maximize, Alt+↓ restore. Mouse edge-snapping shares the same engine (saved-rect restore included)
+- **Screen-reader announcements** for every window state change: snapped left/right, maximized, restored
+- Shortcuts reference (**?**) lists the new Flow keys
+
 ### 🖥️ Living Desktop Edition (v2.8)
 - **Today widget** — a live desktop card: today's date, tasks due/overdue, this month's budget net, and the next up to 3 due tasks; every row launches the right app, auto-refreshes every 30 s
 - **Task reminders** — when a task hits its due date (or slips past it) you get a toast; each task is reminded at most once per day, and every reminder is audit-logged
@@ -169,4 +174,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.8.0 — Living Desktop Edition*
+*Made with ♥ in the browser. v2.9.0 — Flow Edition*

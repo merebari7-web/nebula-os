@@ -27,3 +27,7 @@ test/snip_pub*.js
 test/splice28*.py
 test/patch_test28.py
 test/i18n_v280.py
+test/snip_snenigine.js
+test/splice29.py
+test/patch_test29.py
+test/i18n_v290.py
