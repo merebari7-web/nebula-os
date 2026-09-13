@@ -19,6 +19,7 @@
     if (n.endsWith('.md')) return '📑';
     if (/\.(js|ts|css|html|py|sh|json)$/.test(n)) return '🧩';
     if (n.endsWith('.csv')) return '🧾';
+    if (n.endsWith('.apk')) return '🤖';
     return '📄';
   }
   function resolvePath(cwd, arg) {
@@ -215,7 +216,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 2.0.3 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.1.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -468,6 +469,7 @@
               it.addEventListener('dblclick', () => {
                 const p = (cwd === '/' ? '/' : cwd + '/') + n.name;
                 if (n.type === 'dir') { cwd = p; selected = null; render(); }
+                else if (/\.apk$/i.test(n.name)) { openApp('android'); notify('🤖', n.name, t('and.install')); }
                 else if (TEXT_EXTS.test(n.name)) {
                   const node = FS.nodeAt(p);
                   if (/\.(js|css|html|json|ts|md|sh|py)$/.test(n.name)) openApp('code', { path: p });
@@ -1361,6 +1363,7 @@
               '<div><span>Mission Control</span><b>Ctrl/⌘+` — window overview</b></div>' +
               '<div><span>Assistant</span><b>offline natural-language commands</b></div>' +
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
+              '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
               '<div><span>Shortcuts</span><b>⌘Space · ⌘` · Alt+Tab · Alt+L</b></div>' +
               '<div><span>Filesystem</span><b>virtual, localStorage-backed</b></div>' +

@@ -1,6 +1,6 @@
 /* Nebula OS service worker — offline-first shell */
-const CACHE = 'nebula-os-v5';
-const SHELL = ['./', 'index.html', 'css/style.css', 'js/fs.js', 'js/i18n.js', 'js/os.js', 'js/apps.js', 'js/apps-extra.js', 'manifest.webmanifest', 'docs/icon-192.png', 'docs/icon-512.png', 'docs/og.png'];
+const CACHE = 'nebula-os-v6';
+const SHELL = ['./', 'index.html', 'css/style.css', 'js/fs.js', 'js/i18n.js', 'js/os.js', 'js/apps.js', 'js/apps-extra.js', 'js/android.js', 'manifest.webmanifest', 'docs/icon-192.png', 'docs/icon-512.png', 'docs/og.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).catch(() => {}));

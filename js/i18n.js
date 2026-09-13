@@ -105,7 +105,11 @@
       'rem.add': 'Add a reminder…',
       'rem.empty': 'No reminders yet',
       'fs.imported': 'Imported',
-      'fs.exported': 'Exported'
+      'fs.exported': 'Exported',
+      'app.android': 'Android',
+      'and.install': 'Install APK',
+      'and.center': 'App Center',
+      'and.noBridge': 'No web bridge for this package'
     },
 
     es: {
@@ -207,7 +211,11 @@
       'rem.add': 'Añadir un recordatorio…',
       'rem.empty': 'Sin recordatorios',
       'fs.imported': 'Importado',
-      'fs.exported': 'Exportado'
+      'fs.exported': 'Exportado',
+      'app.android': 'Android',
+      'and.install': 'Instalar APK',
+      'and.center': 'Centro de apps',
+      'and.noBridge': 'Sin puente web para este paquete'
     },
 
     fr: {
@@ -309,7 +317,11 @@
       'rem.add': 'Ajouter un rappel…',
       'rem.empty': 'Aucun rappel',
       'fs.imported': 'Importé',
-      'fs.exported': 'Exporté'
+      'fs.exported': 'Exporté',
+      'app.android': 'Android',
+      'and.install': 'Installer un APK',
+      'and.center': 'Boutique d’apps',
+      'and.noBridge': 'Aucun pont web pour ce paquet'
     },
 
     de: {
@@ -411,7 +423,11 @@
       'rem.add': 'Erinnerung hinzufügen…',
       'rem.empty': 'Noch keine Erinnerungen',
       'fs.imported': 'Importiert',
-      'fs.exported': 'Exportiert'
+      'fs.exported': 'Exportiert',
+      'app.android': 'Android',
+      'and.install': 'APK installieren',
+      'and.center': 'App-Center',
+      'and.noBridge': 'Kein Web-Brückendienst für dieses Paket'
     },
 
     pt: {
@@ -514,6 +530,10 @@
       'rem.empty': 'Sem lembretes',
       'fs.imported': 'Importado',
       'fs.exported': 'Exportado',
+      'app.android': 'Android',
+      'and.install': 'Instalar APK',
+      'and.center': 'Central de apps',
+      'and.noBridge': 'Sem ponte web para este pacote'
     },
 
     ja: {
@@ -615,7 +635,11 @@
       'rem.add': 'リマインダーを追加…',
       'rem.empty': 'リマインダーはまだありません',
       'fs.imported': 'インポートしました',
-      'fs.exported': 'エクスポートしました'
+      'fs.exported': 'エクスポートしました',
+      'app.android': 'アンドロイド',
+      'and.install': 'APK をインストール',
+      'and.center': 'アプリセンター',
+      'and.noBridge': 'このパッケージの Web ブリッジはありません'
     },
 
     hi: {
@@ -717,7 +741,11 @@
       'rem.add': 'स्मरणपत्र जोड़ें…',
       'rem.empty': 'अभी कोई स्मरणपत्र नहीं',
       'fs.imported': 'आयात किया गया',
-      'fs.exported': 'निर्यात किया गया'
+      'fs.exported': 'निर्यात किया गया',
+      'app.android': 'एंड्रॉइड',
+      'and.install': 'APK इंस्टॉल करें',
+      'and.center': 'ऐप सेंटर',
+      'and.noBridge': 'इस पैकेज के लिए वेब ब्रिज नहीं'
     },
 
     ar: {
@@ -819,7 +847,11 @@
       'rem.add': 'أضف تذكيرًا…',
       'rem.empty': 'لا توجد تذكيرات بعد',
       'fs.imported': 'تم الاستيراد',
-      'fs.exported': 'تم التصدير'
+      'fs.exported': 'تم التصدير',
+      'app.android': 'أندرويد',
+      'and.install': 'تثبيت APK',
+      'and.center': 'مركز التطبيقات',
+      'and.noBridge': 'لا يوجد جسر ويب لهذا الحزمة'
     }
   };
 

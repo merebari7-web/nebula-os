@@ -1213,6 +1213,4 @@
 
 window.Nebula = Object.assign({}, window.Nebula, { highlightCode, langOf });
 
-  /* boot once every app (incl. this file's) is registered */
-  OS.init();
 })();

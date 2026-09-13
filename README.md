@@ -1,6 +1,6 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 19 apps, 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 20 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
@@ -15,6 +15,14 @@
 - **Real file I/O** — in Files: ⬆ imports files *from your computer* into the virtual filesystem, ⬇ exports a selected file back out as a download
 - **PWA** — web manifest + service worker + 192/512 icons: **install to your desktop/home screen** and it serves its shell offline
 
+### 🤖 Android compatibility (v2.1)
+- **Install real APKs** — drop an `.apk` on the Android app (or browse to it). Nebula parses the actual archive (ZIP central directory + DEFLATE via `DecompressionStream`), reads `AndroidManifest.xml` for the **package name and version**, and extracts the app's **icon** from `res/mipmap*/ic_launcher.png`
+- **Android launcher** — home screen grid of your installed apps, live clock status bar, per-app session windows with Android chrome (status bar, back/home/recents nav)
+- **Web-bridge runtime** — every launched app runs through its **official web version**: embedded in the window where the site allows it, with one-tap "open externally" otherwise (WhatsApp Web, Telegram, Instagram, Spotify, Netflix, Twitch, Gmail, …); some launch natively through their Nebula equivalents (YouTube → Nebula YouTube, Maps → Nebula Maps)
+- **App Center** — curated catalog of 19 popular apps with one-tap install, search, and recents
+- **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
+- Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
+
 ### macOS-style shell
 - **Top menu bar** — Apple menu, File / Edit / View / Window menus (all with real actions), right-side status icons and live clock; hover-switches between open menus, `Esc` closes
 - **Dock** — frosted glass, **icon magnification on hover** (CSS transforms, rAF-throttled), running-app indicator dots, tooltips, Launchpad rocket, and a **show-desktop edge** (minimize all / click again to restore)
@@ -24,7 +32,7 @@
 - Real shortcuts: `⌘/Ctrl+Space` Spotlight · `` ⌘/Ctrl+` `` Mission Control · `⌘/Ctrl+N` new note · `⌘/Ctrl+T` terminal · `⌘/Ctrl+D` next wallpaper · `⌃⌘Q` lock
 
 ### Interactive desktop
-- Boot sequence → desktop with **19 app icons** (right-aligned, like macOS)
+- Boot sequence → desktop with **20 app icons** (right-aligned, like macOS)
 - **Drag & drop icons** to rearrange them — the grid reflows live and your layout is saved
 - **Pin / unpin** icons from the desktop (right-click → Unpin; right-click the wallpaper → Arrange icons restores the full set)
 - **Keyboard navigation** — `Tab` / `Shift+Tab` to cycle, arrow keys to roam the grid, `Enter` to launch, `Esc` to deselect
@@ -40,7 +48,7 @@
 - **Edge snapping** — drag to the top/left/right edge for half/full screen with a live ghost preview
 - Minimize/maximize/restore animations, z-order focus
 
-### 19 applications
+### 20 applications
 | App | What it does |
 | --- | --- |
 | ⬛ Terminal | Multi-tab shell over the virtual FS: `ls cd cat tree find df ps top uname ping cowsay sl matrix fortune edit theme open neofetch sudo …` — arrow-key history, 25+ commands |
@@ -60,6 +68,7 @@
 | 🐍 Snake | Classic Snake — arrow/WASD, speed-up, persistent high score |
 | 📈 Stocks | **Live crypto markets** (CoinGecko, no key) — price, 24h change, live badge, sample-data fallback, manual refresh |
 | ✅ Reminders | Persistent to-do list — add / tick / delete with progress counter (localStorage) |
+| 🤖 Android | **APK installer + Android runtime** — real archive parsing, app icons, session windows, web-bridge launch, App Center |
 | ⚙️ Settings | Theme, accent color, 6 wallpapers, sound, reduce motion, **language (8)**, PIN, idle lock, reset |
 | 🪐 About | System info & shortcuts |
 
@@ -104,6 +113,7 @@ js/i18n.js        8-language UI dictionary + RTL
 js/os.js          kernel: window manager, lock, alt-tab, parallax, i18n, idle
 js/apps.js        terminal, files, notes, paint, beat deck, browser, monitor, calendar, settings, about
 js/apps-extra.js  calculator, clock, code editor, weather, snake, youtube, maps, stocks, reminders
+js/android.js     Android compatibility layer (APK parser, launcher, sessions, web bridges)
 sw.js             service worker — offline-first shell cache
 manifest.webmanifest  PWA manifest (installable, standalone)
 ```
@@ -118,4 +128,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.0.3 — World Edition*
+*Made with ♥ in the browser. v2.1.0 — Android Edition*

@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.0.3',
+    version: '2.1.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -771,7 +771,7 @@
   }
 
   /* ---------- desktop icons (interactive) ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'calendar', 'snake', 'settings', 'about'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'settings', 'about'];
 
   let desktopState = loadDesktopState();
   function loadDesktopState() {
