@@ -431,7 +431,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.6.0',
+    version: '2.7.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -1478,6 +1478,25 @@
           });
         })((window.NebulaFS && NebulaFS.fs.root), '');
         found.forEach((f) => list.push({ icon: '📄', label: f.name, sub: f.path, run: () => { openApp('files'); notify('📄', f.name, f.path); } }));
+        const dataHits = [];
+        const tryArr = (k) => { try { return JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { return []; } };
+        tryArr('nebula.notes.v1').slice(0, 200).forEach((n) => {
+          if ((n.title || '').toLowerCase().includes(q) || (n.content || '').toLowerCase().includes(q))
+            dataHits.push({ icon: '📝', label: n.title || 'Untitled', sub: t('spot.notes') + ' · ' + (n.content || '').slice(0, 48), run: () => openApp('notes') });
+        });
+        tryArr('nebula.contacts.v1').slice(0, 200).forEach((c) => {
+          if (((c.name || '') + ' ' + (c.phone || '') + ' ' + (c.email || '')).toLowerCase().includes(q))
+            dataHits.push({ icon: '👥', label: c.name, sub: t('spot.contact') + ' · ' + (c.phone || c.email || ''), run: () => openApp('contacts') });
+        });
+        tryArr('nebula.tasks.v1').slice(0, 200).forEach((x) => {
+          if (!x.done && (x.text || '').toLowerCase().includes(q))
+            dataHits.push({ icon: '✅', label: x.text, sub: t('spot.task') + (x.due ? ' · ' + x.due : ''), run: () => openApp('tasks') });
+        });
+        tryArr('nebula.budget.v1').slice(0, 300).forEach((x) => {
+          if (((x.desc || '') + ' ' + (x.cat || '')).toLowerCase().includes(q))
+            dataHits.push({ icon: '💰', label: x.desc || (x.type === 'in' ? 'Income' : 'Expense'), sub: t('spot.txn') + ' · ' + (Math.round(x.amt * 100) / 100).toFixed(2), run: () => openApp('budget') });
+        });
+        dataHits.slice(0, 4).forEach((h) => list.push(h));
       }
       if (!q || q === 'lock') list.push({ icon: '🔒', label: t('ctx.lock'), run: lockScreen });
       if (!q || q.includes('theme')) list.push({ icon: '🌓', label: t('ctx.theme'), run: toggleTheme });
@@ -1947,7 +1966,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.6.0');
+    Audit.log('system.boot', 'Nebula OS v2.7.0');
     OS.applySettings();
     applyI18n();
     buildLock();

@@ -23,6 +23,12 @@
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
 
+### 🔗 Connections & Data Edition (v2.7)
+- **Calendar ↔ Tasks** — the calendar now shows due-date dots (blue = due, red = overdue, dim = done); click any day for its task list
+- **Notes markdown** — built-in zero-dependency markdown renderer (headings, bold/italic, inline & fenced code, lists, quotes, hr, links) with an Edit/Preview toggle and Copy-Markdown button
+- **Budget CSV** — export the whole ledger as CSV and import it back (round-trips with any spreadsheet)
+- **Spotlight local search** — Ctrl/⌘+Space now finds your **notes, contacts, tasks and budget entries** (up to 4 data hits per query), alongside apps, files and math
+
 ### 📈 Productivity Edition (v2.6)
 - **Tasks** — local task manager: due dates, three priorities, live filters (All / Today / Overdue / Done), overdue flags, open-count footer, clear-done
 - **Budget** — local income/expense ledger: per-month income, expenses and net cards, categories, per-entry delete, signed amounts
@@ -158,4 +164,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.6.0 — Productivity Edition*
+*Made with ♥ in the browser. v2.7.0 — Connections & Data Edition*

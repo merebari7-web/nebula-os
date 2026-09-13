@@ -232,7 +232,22 @@
       'help.resize': 'Resize window',
       'help.menus': 'Navigate menus',
       'help.tour': 'Tour / dialogs',
-      'help.note': 'Tip: in the menubar, arrow keys move between menus and items; Enter runs the highlighted item.'
+      'help.note': 'Tip: in the menubar, arrow keys move between menus and items; Enter runs the highlighted item.',
+      'cal.tasks': 'Tasks due',
+      'cal.none': 'No tasks this day.',
+      'note.edit': 'Edit',
+      'note.view': 'Preview',
+      'note.copy': 'Copy Markdown',
+      'note.copied': 'Markdown copied',
+      'note.md': '# Heading **bold** *italic* `code` — lists, > quotes',
+      'bg.export': 'Export CSV',
+      'bg.import': 'Import CSV',
+      'bg.imported': '%d transaction(s) imported',
+      'bg.importErr': 'Couldn\'t read transactions from that file.',
+      'spot.notes': 'Note',
+      'spot.contact': 'Contact',
+      'spot.task': 'Task',
+      'spot.txn': 'Transaction'
     },
 
     es: {
@@ -461,7 +476,22 @@
       'help.resize': 'Redimensionar ventana',
       'help.menus': 'Navegar menús',
       'help.tour': 'Tour / diálogos',
-      'help.note': 'Consejo: en la barra de menús, las flechas mueven entre menús e ítems; Enter ejecuta el ítem resaltado.'
+      'help.note': 'Consejo: en la barra de menús, las flechas mueven entre menús e ítems; Enter ejecuta el ítem resaltado.',
+      'cal.tasks': 'Tareas para',
+      'cal.none': 'No hay tareas este día.',
+      'note.edit': 'Editar',
+      'note.view': 'Vista previa',
+      'note.copy': 'Copiar Markdown',
+      'note.copied': 'Markdown copiado',
+      'note.md': '# Título **negrita** *cursiva* `código` — listas, > citas',
+      'bg.export': 'Exportar CSV',
+      'bg.import': 'Importar CSV',
+      'bg.imported': '%d movimiento(s) importado(s)',
+      'bg.importErr': 'No se pudieron leer movimientos de ese archivo.',
+      'spot.notes': 'Nota',
+      'spot.contact': 'Contacto',
+      'spot.task': 'Tarea',
+      'spot.txn': 'Movimiento'
     },
 
     fr: {
@@ -690,7 +720,22 @@
       'help.resize': 'Redimensionner la fenêtre',
       'help.menus': 'Naviguer dans les menus',
       'help.tour': 'Tour / dialogues',
-      'help.note': 'Astuce : dans la barre de menus, les flèches déplacent entre menus et éléments ; Entrée exécute l\'élément surligné.'
+      'help.note': 'Astuce : dans la barre de menus, les flèches déplacent entre menus et éléments ; Entrée exécute l\'élément surligné.',
+      'cal.tasks': 'Tâches du',
+      'cal.none': 'Aucune tâche ce jour-là.',
+      'note.edit': 'Éditer',
+      'note.view': 'Aperçu',
+      'note.copy': 'Copier le Markdown',
+      'note.copied': 'Markdown copié',
+      'note.md': '# Titre **gras** *italique* `code` — listes, > citations',
+      'bg.export': 'Exporter CSV',
+      'bg.import': 'Importer CSV',
+      'bg.imported': '%d transaction(s) importée(s)',
+      'bg.importErr': 'Impossible de lire des transactions dans ce fichier.',
+      'spot.notes': 'Note',
+      'spot.contact': 'Contact',
+      'spot.task': 'Tâche',
+      'spot.txn': 'Transaction'
     },
 
     de: {
@@ -919,7 +964,22 @@
       'help.resize': 'Fenstergröße ändern',
       'help.menus': 'Menüs navigieren',
       'help.tour': 'Tour / Dialoge',
-      'help.note': 'Tipp: In der Leiste bewegen die Pfeiltasten zwischen Menüs und Einträgen; Enter führt den markierten Eintrag aus.'
+      'help.note': 'Tipp: In der Leiste bewegen die Pfeiltasten zwischen Menüs und Einträgen; Enter führt den markierten Eintrag aus.',
+      'cal.tasks': 'Fällige Aufgaben',
+      'cal.none': 'Keine Aufgaben an diesem Tag.',
+      'note.edit': 'Bearbeiten',
+      'note.view': 'Vorschau',
+      'note.copy': 'Markdown kopieren',
+      'note.copied': 'Markdown kopiert',
+      'note.md': '# Überschrift **fett** *kursiv* `Code` — Listen, > Zitate',
+      'bg.export': 'CSV exportieren',
+      'bg.import': 'CSV importieren',
+      'bg.imported': '%d Buchung(en) importiert',
+      'bg.importErr': 'Aus dieser Datei konnten keine Buchungen gelesen werden.',
+      'spot.notes': 'Notiz',
+      'spot.contact': 'Kontakt',
+      'spot.task': 'Aufgabe',
+      'spot.txn': 'Buchung'
     },
 
     pt: {
@@ -1148,7 +1208,22 @@
       'help.resize': 'Redimensionar janela',
       'help.menus': 'Navegar menus',
       'help.tour': 'Tour / diálogos',
-      'help.note': 'Dica: na barra de menus, as setas movem entre menus e itens; Enter executa o item destacado.'
+      'help.note': 'Dica: na barra de menus, as setas movem entre menus e itens; Enter executa o item destacado.',
+      'cal.tasks': 'Tarefas de',
+      'cal.none': 'Nenhuma tarefa neste dia.',
+      'note.edit': 'Editar',
+      'note.view': 'Pré-visualizar',
+      'note.copy': 'Copiar Markdown',
+      'note.copied': 'Markdown copiado',
+      'note.md': '# Título **negrito** *itálico* `código` — listas, > citações',
+      'bg.export': 'Exportar CSV',
+      'bg.import': 'Importar CSV',
+      'bg.imported': '%d transação(ões) importada(s)',
+      'bg.importErr': 'Não foi possível ler transações desse arquivo.',
+      'spot.notes': 'Nota',
+      'spot.contact': 'Contato',
+      'spot.task': 'Tarefa',
+      'spot.txn': 'Transação'
     },
 
     ja: {
@@ -1377,7 +1452,22 @@
       'help.resize': 'ウィンドウのリサイズ',
       'help.menus': 'メニュー操作',
       'help.tour': 'ツアー / ダイアログ',
-      'help.note': 'ヒント: メニューバーでは矢印キーでメニュー・項目間を移動、Enterで選択項目を実行できます。'
+      'help.note': 'ヒント: メニューバーでは矢印キーでメニュー・項目間を移動、Enterで選択項目を実行できます。',
+      'cal.tasks': '期日のタスク',
+      'cal.none': 'この日にタスクはありません。',
+      'note.edit': '編集',
+      'note.view': 'プレビュー',
+      'note.copy': 'Markdownをコピー',
+      'note.copied': 'Markdownをコピーしました',
+      'note.md': '# 見出し **太字** *斜体* `コード` — リスト、> 引用',
+      'bg.export': 'CSV エクスポート',
+      'bg.import': 'CSV インポート',
+      'bg.imported': '%d件の取引をインポート',
+      'bg.importErr': 'そのファイルから取引を読み取れませんでした。',
+      'spot.notes': 'メモ',
+      'spot.contact': '連絡先',
+      'spot.task': 'タスク',
+      'spot.txn': '取引'
     },
 
     hi: {
@@ -1606,7 +1696,22 @@
       'help.resize': 'विंडो का आकार बदलें',
       'help.menus': 'मेनू नेविगेट',
       'help.tour': 'टूर / डायलॉग',
-      'help.note': 'सुझाव: मेनू बार में तीर कुंजियाँ मेनू-वस्तुओं में चलाईं; Enter चयनित वस्तु चलाता है।'
+      'help.note': 'सुझाव: मेनू बार में तीर कुंजियाँ मेनू-वस्तुओं में चलाईं; Enter चयनित वस्तु चलाता है।',
+      'cal.tasks': 'समाप्ति वाले कार्य',
+      'cal.none': 'इस दिन कोई कार्य नहीं।',
+      'note.edit': 'संपादित करें',
+      'note.view': 'पूर्वावलोकन',
+      'note.copy': 'Markdown कॉपी करें',
+      'note.copied': 'Markdown कॉपी हुआ',
+      'note.md': '# शीर्षक **मोटा** *तिरछा* `कोड` — सूचियाँ, > उद्धरण',
+      'bg.export': 'CSV निर्यात',
+      'bg.import': 'CSV आयात',
+      'bg.imported': '%d लेन-देन आयात हुए',
+      'bg.importErr': 'उस फ़ाइल से लेन-देन नहीं पढ़े जा सके।',
+      'spot.notes': 'नोट',
+      'spot.contact': 'संपर्क',
+      'spot.task': 'कार्य',
+      'spot.txn': 'लेन-देन'
     },
 
     ar: {
@@ -1835,7 +1940,22 @@
       'help.resize': 'تغيير حجم النافذة',
       'help.menus': 'التنقل في القوائم',
       'help.tour': 'الجولة / النوافذ',
-      'help.note': 'ملاحظة: في شريط القائمة، الأسهم تنقل بين القوائم والعناصر؛ Enter يشغّل العنصر المحدد.'
+      'help.note': 'ملاحظة: في شريط القائمة، الأسهم تنقل بين القوائم والعناصر؛ Enter يشغّل العنصر المحدد.',
+      'cal.tasks': 'مهام مستحقة',
+      'cal.none': 'لا مهام في هذا اليوم.',
+      'note.edit': 'تحرير',
+      'note.view': 'معاينة',
+      'note.copy': 'نسخ Markdown',
+      'note.copied': 'تم نسخ Markdown',
+      'note.md': '# عنوان **عريض** *مائل* `كود` — قوائم، > اقتباسات',
+      'bg.export': 'تصدير CSV',
+      'bg.import': 'استيراد CSV',
+      'bg.imported': 'تم استيراد %d معاملة',
+      'bg.importErr': 'تعذّرت قراءة معاملات من ذلك الملف.',
+      'spot.notes': 'ملاحظة',
+      'spot.contact': 'جهة اتصال',
+      'spot.task': 'مهمة',
+      'spot.txn': 'معاملة'
     }
   };
 

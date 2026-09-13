@@ -17,3 +17,8 @@ __pycache__/
 # local scratch
 .arena-memory.md
 test/i18n_v250.py
+test/snip_*.js
+test/splice27.py
+test/patch_test27.py
+test/diag.py
+test/i18n_v270.py

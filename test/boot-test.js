@@ -108,7 +108,7 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.6.0', 'OS booted at v2.6.0');
+  ok(window.OS && window.OS.version === '2.7.0', 'OS booted at v2.7.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
   ok(Object.keys(window.APPS).length === 27, '27 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
@@ -227,6 +227,11 @@ function buildApk(pkg, ver) {
   await sleep(120);
   const spotRes = spot.textContent;
   ok(spotRes.includes('8'), 'spotlight math "2+2*3" returns 8 (safe parser)');
+  window.localStorage.setItem('nebula.contacts.v1', JSON.stringify([{ id: 901, name: 'Spotlight Smith', phone: '555-7788', email: 'spot@example.gov', notes: '' }]));
+  si.value = 'spotlight smith';
+  si.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await sleep(120);
+  ok(spot.textContent.includes('Spotlight Smith') && spot.textContent.includes('Contact'), 'spotlight searches local contacts');
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await sleep(60);
 
@@ -454,6 +459,7 @@ function buildApk(pkg, ver) {
 
   /* ---------- contacts ---------- */
   console.log('--- contacts ---');
+  window.localStorage.setItem('nebula.contacts.v1', '[]'); // isolate from spotlight seed
   window.openApp('contacts');
   await sleep(160);
   const ctW = window.OS.windows.get('contacts');
@@ -567,6 +573,17 @@ function buildApk(pkg, ver) {
   ok(bgOut === '120.50', 'expense card sums this month (' + bgOut + ')');
   ok(bgNet === '179.50', 'net card computes this month (' + bgNet + ')');
   ok(bgW.el.querySelectorAll('.bg-row').length === 2, 'both transactions listed');
+  bgW.el.querySelector('[data-csvexp]').click();
+  await sleep(80);
+  ok(window.Audit.read().some((e) => e.event === 'budget.export'), 'budget CSV export audited');
+  const csvText = 'type,amount,category,date,description\n"out",42.5,"Food","2026-01-05","Imported lunch"\n"in",10,"Other","2026-01-06","Imported refund"\n';
+  Object.defineProperty(bgW.el.querySelector('[data-csvpick]'), 'files', {
+    value: [new window.File([csvText], 'budget.csv', { type: 'text/csv' })], configurable: true
+  });
+  bgW.el.querySelector('[data-csvpick]').dispatchEvent(new window.Event('change', { bubbles: true }));
+  await sleep(150);
+  ok(bgW.el.querySelectorAll('.bg-row').length === 4, 'CSV import adds transactions');
+  ok(window.Audit.read().some((e) => e.event === 'budget.import'), 'budget CSV import audited');
   window.closeWindow('budget');
   await sleep(80);
 
@@ -590,6 +607,52 @@ function buildApk(pkg, ver) {
   document.getElementById('help').querySelector('[data-hc]').click();
   await sleep(60);
   ok(!document.getElementById('help'), 'close button dismisses it');
+
+  /* ---------- notes markdown ---------- */
+  console.log('--- notes markdown ---');
+  window.openApp('notes');
+  await sleep(160);
+  const ndW = window.OS.windows.get('notes');
+  const ndBody = ndW.el.querySelector('.notes-body');
+  ndBody.value = '# Report\n\n**bold** and *italic* and `code`\n- item one\n- item two\n\n> a quote';
+  ndBody.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await sleep(60);
+  ndW.el.querySelector('[data-view="preview"]').click();
+  await sleep(80);
+  const ndPrev = ndW.el.querySelector('.notes-prev');
+  ok(!ndPrev.classList.contains('hidden'), 'markdown preview shows');
+  ok(ndPrev.innerHTML.includes('<h2') && ndPrev.innerHTML.includes('<b>bold</b>') && ndPrev.innerHTML.includes('<code>code</code>'), 'markdown renders heading, bold and code');
+  ok(ndPrev.querySelectorAll('.md-ul li').length === 2, 'markdown renders list items');
+  ok(ndPrev.querySelector('.md-q') !== null, 'markdown renders blockquote');
+  ndW.el.querySelector('[data-view="edit"]').click();
+  await sleep(60);
+  ok(ndPrev.classList.contains('hidden'), 'edit mode hides preview');
+  window.closeWindow('notes');
+  await sleep(80);
+
+  /* ---------- calendar <-> tasks ---------- */
+  console.log('--- calendar tasks ---');
+  const tNow = new Date();
+  const lateKey = tNow.getFullYear() + '-' + String(tNow.getMonth() + 1).padStart(2, '0') + '-' + String(Math.max(1, tNow.getDate() - 5)).padStart(2, '0');
+  window.localStorage.setItem('nebula.tasks.v1', JSON.stringify([
+    { id: 101, text: 'Cal test task', due: todayStr, prio: 1, done: false, created: Date.now(), updated: Date.now() },
+    { id: 102, text: 'Old overdue task', due: lateKey, prio: 0, done: false, created: Date.now(), updated: Date.now() }
+  ]));
+  window.openApp('calendar');
+  await sleep(160);
+  const calW = window.OS.windows.get('calendar');
+  ok(!!calW, 'calendar opens');
+  const dots = calW.el.querySelectorAll('.mdot');
+  ok(dots.length >= 1, 'calendar shows due-date dots (' + dots.length + ')');
+  ok(lateKey === todayStr || calW.el.querySelector('.mdot.late') !== null, 'overdue task gets a red dot');
+  const todayCell = calW.el.querySelector('.cal-day.today');
+  ok(!!todayCell && !!todayCell.querySelector('.mdot'), 'today carries a due dot');
+  todayCell.click();
+  await sleep(60);
+  const calPanel = calW.el.querySelector('.cal-daypanel');
+  ok(!calPanel.classList.contains('hidden') && calPanel.textContent.includes('Cal test task'), 'day panel lists the due task');
+  window.closeWindow('calendar');
+  await sleep(80);
 
   /* ---------- backup (last: restore path reloads after 500ms) ---------- */
   console.log('--- backup ---');

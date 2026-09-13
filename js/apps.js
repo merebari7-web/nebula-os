@@ -32,6 +32,42 @@ function readFileText(f) {
     r.readAsText(f);
   });
 }
+/* tiny markdown renderer (headings, bold/italic, code, lists, quotes, hr, links) — no dependencies */
+function mdRender(src) {
+  const lines = esc(String(src || '')).split('\n');
+  let html = '', inCode = false, inList = null, inQuote = false;
+  const closeList = () => { if (inList) { html += '</' + inList + '>'; inList = null; } };
+  const closeQuote = () => { if (inQuote) { html += '</blockquote>'; inQuote = false; } };
+  const inline = (x) => x
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>')
+    .replace(/\*([^*]+)\*/g, '<i>$1</i>')
+    .replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  for (const raw of lines) {
+    if (/^```/.test(raw)) {
+      closeList(); closeQuote();
+      if (!inCode) { html += '<pre class="md-pre"><code>'; inCode = true; }
+      else { html += '</code></pre>'; inCode = false; }
+      continue;
+    }
+    if (inCode) { html += raw + '\n'; continue; }
+    const h = raw.match(/^(#{1,4})\s+(.*)/);
+    if (h) { closeList(); closeQuote(); const l = h[1].length; html += '<h' + (l + 1) + ' class="md-h">' + inline(h[2]) + '</h' + (l + 1) + '>'; continue; }
+    if (/^\s*(-{3,}|\*{3,})\s*$/.test(raw)) { closeList(); closeQuote(); html += '<hr class="md-hr">'; continue; }
+    const li = raw.match(/^\s*[-*]\s+(.*)/);
+    if (li) { closeQuote(); if (inList !== 'ul') { closeList(); html += '<ul class="md-ul">'; inList = 'ul'; } html += '<li>' + inline(li[1]) + '</li>'; continue; }
+    const oli = raw.match(/^\s*\d+\.\s+(.*)/);
+    if (oli) { closeQuote(); if (inList !== 'ol') { closeList(); html += '<ol class="md-ol">'; inList = 'ol'; } html += '<li>' + inline(oli[1]) + '</li>'; continue; }
+    const q = raw.match(/^&gt;\s?(.*)/);
+    if (q) { closeList(); if (!inQuote) { html += '<blockquote class="md-q">'; inQuote = true; } html += inline(q[1]) + '<br>'; continue; }
+    if (!raw.trim()) { closeList(); closeQuote(); continue; }
+    closeList(); closeQuote();
+    html += '<p class="md-p">' + inline(raw) + '</p>';
+  }
+  closeList(); closeQuote();
+  if (inCode) html += '</code></pre>';
+  return html;
+}
 function resolvePath(cwd, arg) {
     if (!arg) return cwd;
     if (arg.startsWith('/')) return arg;
@@ -226,7 +262,7 @@ function resolvePath(cwd, arg) {
                 break;
               }
               case 'uname':
-                print('Nebula 2.6.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.7.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -605,7 +641,15 @@ function resolvePath(cwd, arg) {
             '</aside>' +
             '<main class="notes-main">' +
               '<input class="notes-title" placeholder="Untitled" spellcheck="false">' +
+              '<div class="notes-tools">' +
+                '<div class="seg">' +
+                  '<button data-view="edit" class="on">' + esc(t('note.edit')) + '</button>' +
+                  '<button data-view="preview">' + esc(t('note.view')) + '</button>' +
+                '</div>' +
+                '<button class="btn ghost sm" data-copy>' + esc(t('note.copy')) + '</button>' +
+              '</div>' +
               '<textarea class="notes-body" placeholder="Start typing… everything autosaves." spellcheck="false"></textarea>' +
+              '<div class="notes-prev hidden"></div>' +
             '</main>';
           win.body.appendChild(root);
 
@@ -653,6 +697,28 @@ function resolvePath(cwd, arg) {
             save(); renderList(); syncFromCurrent();
           }
 
+          const prevEl = root.querySelector('.notes-prev');
+          let view = 'edit';
+          function setView(v) {
+            view = v;
+            root.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+            bodyEl.classList.toggle('hidden', v !== 'edit');
+            if (v === 'preview') { prevEl.innerHTML = mdRender(bodyEl.value); prevEl.classList.remove('hidden'); }
+            else prevEl.classList.add('hidden');
+          }
+          root.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => setView(b.dataset.view)));
+          root.querySelector('[data-copy]').addEventListener('click', () => {
+            const txt = bodyEl.value;
+            if (!txt) return;
+            const done = () => notify('📋', t('note.copied'));
+            if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, done);
+            else {
+              const ta = document.createElement('textarea');
+              ta.value = txt; document.body.appendChild(ta); ta.select();
+              try { document.execCommand('copy'); done(); } catch (e) {}
+              ta.remove();
+            }
+          });
           titleEl.addEventListener('input', () => {
             if (!current) return;
             current.title = titleEl.value; current.updated = Date.now();
@@ -1176,10 +1242,25 @@ function resolvePath(cwd, arg) {
                 '<button class="btn icon sm" data-nav="next">→</button>' +
               '</div>' +
             '</div>' +
-            '<div class="cal-grid"></div>';
+            '<div class="cal-grid"></div>' +
+            '<div class="cal-daypanel hidden"></div>';
           win.body.appendChild(root);
           const titleEl = root.querySelector('.cal-title');
           const grid = root.querySelector('.cal-grid');
+          let dayTasks = [];
+          try { dayTasks = JSON.parse(localStorage.getItem('nebula.tasks.v1') || '[]'); } catch (e) { dayTasks = []; }
+          const todayKey = (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); })();
+          const calPanel = root.querySelector('.cal-daypanel');
+          function showDay(dkey, dayNum) {
+            const dt = new Date(y, m, dayNum);
+            const due = dayTasks.filter((x) => x.due === dkey);
+            calPanel.innerHTML = '<div class="cal-dp-h">✅ ' + esc(t('cal.tasks')) + ' ' +
+              dt.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '</div>' +
+              (due.length
+                ? due.map((x) => '<div class="cal-dp-item' + (x.done ? ' done' : '') + '"><span>' + (x.done ? '✓' : '○') + '</span>' + esc(x.text) + '</div>').join('')
+                : '<div class="cal-dp-empty">' + esc(t('cal.none')) + '</div>');
+            calPanel.classList.remove('hidden');
+          }
 
           function render() {
             const first = new Date(y, m, 1);
@@ -1197,6 +1278,16 @@ function resolvePath(cwd, arg) {
               const isToday = !other && dayNum === today.getDate() && m === today.getMonth() && y === today.getFullYear();
               const cell = $el('div', 'cal-day' + (other ? ' other' : '') + (isToday ? ' today' : ''));
               cell.textContent = shown;
+              if (!other) {
+                const dkey = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0');
+                const dueTasks = dayTasks.filter((x) => x.due === dkey);
+                if (dueTasks.length) {
+                  const allDone = dueTasks.every((x) => x.done);
+                  const late = dueTasks.some((x) => !x.done && dkey < todayKey);
+                  cell.appendChild($el('span', 'mdot' + (late ? ' late' : '') + (allDone ? ' done' : '')));
+                }
+                cell.addEventListener('click', () => showDay(dkey, dayNum));
+              }
               grid.appendChild(cell);
             }
           }
@@ -1403,6 +1494,7 @@ function resolvePath(cwd, arg) {
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
               '<div><span>New in 2.5</span><b>Contacts (vCard/CSV) · Music (local audio) · Backup (one-file restore) · Onboarding tour</b></div>' +
               '<div><span>New in 2.6</span><b>Tasks (due dates · priorities) · Budget (income/expense ledger) · Shortcuts reference (press ?)</b></div>' +
+              '<div><span>New in 2.7</span><b>Calendar shows task due-dates · Notes markdown preview · Budget CSV in/out · Spotlight finds notes, contacts, tasks &amp; budget</b></div>' +
               '<div><span>Compliance</span><b>WCAG 2.1 AA · Section 508 · <a href="docs/a11y.html" target="_blank" rel="noopener">Accessibility &amp; security statement ↗</a></b></div>' +
               '<div><span>Audit</span><b>immutable local event log · PIN (salted SHA-256) · auto-lock</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
@@ -2219,6 +2311,11 @@ function resolvePath(cwd, arg) {
               '<input class="bg-desc" placeholder="' + esc(t('bg.desc')) + '" aria-label="' + esc(t('bg.desc')) + '">' +
               '<button class="btn sm" data-add>' + esc(t('bg.add')) + '</button>' +
             '</div>' +
+            '<div class="bg-listhead"><span class="spacer"></span>' +
+              '<button class="btn ghost sm" data-csvexp>🧾 ' + esc(t('bg.export')) + '</button>' +
+              '<button class="btn ghost sm" data-csvimp>⬆ ' + esc(t('bg.import')) + '</button>' +
+              '<input type="file" hidden data-csvpick accept=".csv,text/csv">' +
+            '</div>' +
             '<div class="bg-list"></div>';
           winW.body.appendChild(box);
 
@@ -2264,6 +2361,47 @@ function resolvePath(cwd, arg) {
               listEl.appendChild(row);
             });
           }
+          box.querySelector('[data-csvexp]').addEventListener('click', () => {
+            if (!items.length) { notify('⚠️', t('bg.empty')); return; }
+            const csv = 'type,amount,category,date,description\n' + items.map((x) =>
+              [x.type, x.amt, x.cat, x.date, x.desc || ''].map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+            const a = document.createElement('a');
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'nebula-budget.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            Audit.log('budget.export', items.length + ' rows');
+            notify('🧾', t('bg.export'), items.length + '');
+          });
+          const csvPick = box.querySelector('[data-csvpick]');
+          box.querySelector('[data-csvimp]').addEventListener('click', () => csvPick.click());
+          csvPick.addEventListener('change', async () => {
+            const f = csvPick.files && csvPick.files[0];
+            csvPick.value = '';
+            if (!f) return;
+            try {
+              const text = await readFileText(f);
+              const rows = text.trim().split(/\r?\n/);
+              if (!rows.length) throw new Error('empty');
+              const start = rows[0].toLowerCase().includes('type') ? 1 : 0;
+              let added = 0;
+              for (let i = start; i < rows.length; i++) {
+                const cells = (rows[i].match(/("(?:[^"]|"")*"|[^,]*)(?:,|$)/g) || []).map((c) =>
+                  c.replace(/,$/, '').replace(/^"(.*)"$/, '$1').replace(/""/g, '"').trim());
+                if (!cells.length || !cells[0]) continue;
+                const type = cells[0];
+                const amt = parseFloat(cells[1]);
+                if ((type !== 'in' && type !== 'out') || !(amt > 0)) continue;
+                items.unshift({ id: Date.now() + i * 31 + Math.floor(Math.random() * 1e3), type, amt: Math.round(amt * 100) / 100, cat: cells[2] || '—', desc: cells[4] || '', date: cells[3] || today });
+                added++;
+              }
+              if (!added) throw new Error('none');
+              save(); render();
+              Audit.log('budget.import', added + ' rows from ' + f.name);
+              notify('⬆️', t('bg.import'), t('bg.imported').replace('%d', added));
+            } catch (e) {
+              notify('⚠️', t('bg.importErr'), f.name);
+            }
+          });
           box.querySelector('[data-add]').addEventListener('click', () => {
             const amt = parseFloat(box.querySelector('.bg-amt').value);
             if (!(amt > 0)) { notify('⚠️', t('bg.needAmt')); return; }
