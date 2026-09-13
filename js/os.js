@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.0.0',
+    version: '2.0.1',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -888,6 +888,7 @@
     let mRaf = null;
     dock.addEventListener('pointermove', (e) => {
       if (OS.settings.reduceMotion || mRaf || e.pointerType === 'touch') return;
+      if (dock.scrollWidth > dock.clientWidth + 1) return; // scrollable dock: skip magnification
       mRaf = requestAnimationFrame(() => {
         mRaf = null;
         dock.querySelectorAll('.dock-icon').forEach((ic) => {

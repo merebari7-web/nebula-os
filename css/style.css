@@ -315,7 +315,12 @@ body[data-theme="dark"] .mb-clock:hover{ background:rgba(255,255,255,.16); }
   backdrop-filter:blur(28px) saturate(180%);
   border:1px solid rgba(255,255,255,.35);
   box-shadow:0 14px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.3);
+  max-width:calc(100vw - 12px);
+  overflow-x:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
 }
+#dock::-webkit-scrollbar{ width:0; height:0; display:none; }
 body[data-theme="dark"] #dock{ background:rgba(52,52,60,.34); border-color:rgba(255,255,255,.16); }
 .dock-icon{
   position:relative; width:50px; height:50px;
@@ -770,6 +775,11 @@ body[data-motion="reduce"] *::after{
   animation:none !important;
   transition:none !important;
 }
+@media (max-width:1240px){
+  .dock-icon{ width:44px; height:44px; }
+  .dock-tile{ width:40px; height:40px; font-size:26px; }
+  .dock-sep{ margin:3px 2px; }
+}
 @media (max-width:760px){
   .task-label{ display:none; }
   #menubar{ font-size:12px; padding:0 5px; }
@@ -777,8 +787,8 @@ body[data-motion="reduce"] *::after{
   .mb-appname{ display:none; }
   .mb-key{ display:none; }
   #dock{ padding:5px 6px; gap:3px; margin-bottom:6px; border-radius:16px; }
-  .dock-icon{ width:44px; height:44px; }
-  .dock-tile{ width:40px; height:40px; font-size:26px; }
+  .dock-icon{ width:40px; height:40px; }
+  .dock-tile{ width:36px; height:36px; font-size:22px; }
   .dock-tip{ display:none; }
   .start-grid{ grid-template-columns:repeat(3, 1fr); }
   .fm-grid{ grid-template-columns:repeat(auto-fill, minmax(76px, 1fr)); }
