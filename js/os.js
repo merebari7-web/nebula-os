@@ -55,7 +55,9 @@
     { name: 'Ventura', css: 'radial-gradient(1200px 850px at 75% -15%, rgba(96,165,250,.5) 0%, rgba(96,165,250,0) 60%), radial-gradient(1000px 700px at 15% 115%, rgba(192,132,252,.42) 0%, rgba(192,132,252,0) 55%), linear-gradient(150deg, #0b1030 0%, #232a6b 45%, #5b4bb5 75%, #9d7bea 100%)' },
     { name: 'Monterey', css: 'radial-gradient(1000px 700px at 72% 118%, rgba(125,196,245,.5) 0%, rgba(125,196,245,0) 58%), radial-gradient(800px 500px at 18% -12%, rgba(56,130,246,.3) 0%, rgba(56,130,246,0) 55%), linear-gradient(180deg, #071a3a 0%, #0e3a6e 42%, #2f6db5 72%, #6db3e8 100%)' },
     { name: 'Big Sur', css: 'radial-gradient(1000px 700px at 80% 115%, rgba(251,146,60,.5) 0%, rgba(251,146,60,0) 55%), radial-gradient(900px 600px at 12% -12%, rgba(244,114,182,.25) 0%, rgba(244,114,182,0) 55%), linear-gradient(160deg, #1a0b2e 0%, #5b2a5e 45%, #c2544f 75%, #f2935c 100%)' },
-    { name: 'Void', css: 'radial-gradient(1200px 800px at 50% 50%, rgba(88,101,242,.16) 0%, rgba(88,101,242,0) 65%), linear-gradient(180deg, #04040a 0%, #08080f 60%, #0c0c16 100%)' }
+    { name: 'Void', css: 'radial-gradient(1200px 800px at 50% 50%, rgba(88,101,242,.16) 0%, rgba(88,101,242,0) 65%), linear-gradient(180deg, #04040a 0%, #08080f 60%, #0c0c16 100%)' },
+    { name: 'Liberty', css: 'radial-gradient(circle, rgba(253,230,138,.9) 1px, transparent 1.6px) 0 0/170px 170px, radial-gradient(circle, rgba(255,255,255,.6) .8px, transparent 1.4px) 62px 96px/233px 233px, radial-gradient(circle, rgba(253,230,138,.45) 1.1px, transparent 1.7px) 130px 40px/311px 311px, radial-gradient(1400px 700px at 50% 118%, rgba(250,204,21,.2) 0%, transparent 60%), linear-gradient(180deg, #020617 0%, #0a1633 55%, #16294f 100%)' },
+    { name: 'Old Glory', css: 'radial-gradient(circle, rgba(253,230,138,.75) 1px, transparent 1.6px) 34px 62px/201px 201px, radial-gradient(1200px 500px at 12% -10%, rgba(220,38,38,.42) 0%, transparent 55%), radial-gradient(1000px 700px at 88% 112%, rgba(30,58,138,.7) 0%, transparent 62%), linear-gradient(165deg, #0b1026 0%, #141c3f 45%, #3f1220 78%, #7f1d1d 100%)' }
   ];
 
   const ICONS = {
@@ -65,10 +67,87 @@
     close: '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>'
   };
 
+  /* ---------- fireworks (Celebrate) ---------- */
+  let fw = null;
+  function celebrate() {
+    if (fw) return fw;
+    if (OS.settings.reduceMotion) { notify('🎆', t('fw.title'), t('fw.reduced')); return null; }
+    const cv = el('canvas', 'fw-canvas');
+    document.body.appendChild(cv);
+    const ctx = cv.getContext ? cv.getContext('2d') : null;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const size = () => { cv.width = innerWidth * dpr; cv.height = innerHeight * dpr; };
+    size();
+    const rockets = [], sparks = [];
+    const COLORS = ['#ef4444', '#ffffff', '#3b82f6', '#facc15', '#f87171', '#60a5fa', '#fde68a'];
+    const started = (window.performance && performance.now()) || Date.now();
+    let lastLaunch = 0, raf = 0;
+    function launch() {
+      rockets.push({
+        x: (0.15 + Math.random() * 0.7) * innerWidth * dpr,
+        y: innerHeight * dpr + 6,
+        vx: (Math.random() - 0.5) * 1.6 * dpr,
+        vy: -(6.5 + Math.random() * 3) * dpr,
+        color: COLORS[(Math.random() * COLORS.length) | 0], life: 0
+      });
+      try { Sound.blip(180 + Math.random() * 120, 0.12, 'triangle', 0.025); } catch (e) {}
+    }
+    function explode(r) {
+      const n = 42 + ((Math.random() * 26) | 0);
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 * i) / n + Math.random() * 0.2;
+        const sp = (1.6 + Math.random() * 3.4) * dpr;
+        sparks.push({ x: r.x, y: r.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+          color: Math.random() < 0.82 ? r.color : COLORS[(Math.random() * COLORS.length) | 0],
+          life: 0, max: 55 + Math.random() * 30 });
+      }
+      try { Sound.blip(80 + Math.random() * 60, 0.4, 'sine', 0.045); } catch (e) {}
+    }
+    function frame(now) {
+      const t = now - started;
+      if (t > 12000 || (rockets.length + sparks.length === 0 && t > 4000)) { stop(); return; }
+      if (t - lastLaunch > 620 && t < 9500) { launch(); lastLaunch = t; }
+      if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.clearRect(0, 0, cv.width, cv.height);
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = rockets.length - 1; i >= 0; i--) {
+          const r = rockets[i];
+          r.x += r.vx; r.y += r.vy; r.vy += 0.06 * dpr; r.life++;
+          ctx.globalAlpha = 0.9; ctx.fillStyle = r.color;
+          ctx.beginPath(); ctx.arc(r.x, r.y, 1.6 * dpr, 0, 7); ctx.fill();
+          if (r.vy > -1.2 * dpr || r.life > 70) { explode(r); rockets.splice(i, 1); }
+        }
+        for (let i = sparks.length - 1; i >= 0; i--) {
+          const p = sparks[i];
+          p.x += p.vx; p.y += p.vy; p.vx *= 0.985; p.vy = p.vy * 0.985 + 0.05 * dpr; p.life++;
+          if (p.life > p.max) { sparks.splice(i, 1); continue; }
+          ctx.globalAlpha = 1 - p.life / p.max; ctx.fillStyle = p.color;
+          ctx.beginPath(); ctx.arc(p.x, p.y, 1.4 * dpr, 0, 7); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+    function stop() {
+      cancelAnimationFrame(raf);
+      document.removeEventListener('keydown', esc, true);
+      cv.remove();
+      fw = null;
+    }
+    const esc = (e) => { if (e.key === 'Escape') stop(); };
+    document.addEventListener('keydown', esc, true);
+    raf = requestAnimationFrame(frame);
+    fw = { cv, stop, rockets, sparks };
+    notify('🎆', t('fw.title'), t('fw.body'));
+    return fw;
+  }
+
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.2.0',
+    version: '2.3.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -112,6 +191,8 @@
     const wp = byId('wallpaper');
     if (wp) wp.style.background = WALLPAPERS[i].css;
   }
+
+  OS.celebrate = celebrate;
 
   OS.applySettings = function () {
     document.body.dataset.theme = OS.settings.theme;
@@ -1113,6 +1194,7 @@
       files: () => openApp('files'),
       wallpaper: () => cycleWallpaper(),
       theme: () => toggleTheme(),
+      celebrate: () => OS.celebrate(),
       arrange: () => arrangeIcons(),
       showDesktop: () => showDesktopAction(),
       mission: () => toggleMission(),
@@ -1282,6 +1364,7 @@
         '-',
         { label: t('ctx.wallpaper'), icon: '🖼️', action: cycleWallpaper },
         { label: t('ctx.theme'), icon: '🌓', action: toggleTheme },
+        { label: t('ctx.celebrate'), icon: '🎆', action: () => OS.celebrate() },
         { label: t('ctx.lock'), icon: '🔒', action: lockScreen },
         '-',
         { label: t('ctx.about'), icon: '🪐', action: () => openApp('about') }

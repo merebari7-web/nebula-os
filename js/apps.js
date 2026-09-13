@@ -216,7 +216,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 2.2.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.3.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -280,7 +280,7 @@
                 break;
               }
               case 'theme':
-                if (arg === 'dark' || arg === 'light') {
+                if (arg === 'dark' || arg === 'light' || arg === 'patriot') {
                   OS.settings.theme = arg; OS.saveSettings(); OS.applySettings();
                 } else OS.settings.theme = OS.settings.theme === 'dark' ? 'light' : 'dark',
                   OS.saveSettings(), OS.applySettings();
@@ -292,6 +292,11 @@
                 print('wallpaper → ' + WALLPAPERS[OS.settings.wallpaper].name);
                 break;
               }
+              case 'fireworks':
+              case 'celebrate':
+                OS.celebrate();
+                print('celebrating — press Esc to stop the show', s.out);
+                break;
               case 'open': {
                 const id = arg.split(' ')[0];
                 if (APPS[id]) openApp(id);
@@ -1214,6 +1219,7 @@
                   '<div class="seg" data-seg="theme">' +
                     '<button data-v="dark">' + esc(t('set.dark')) + '</button>' +
                     '<button data-v="light">' + esc(t('set.light')) + '</button>' +
+                    '<button data-v="patriot">' + esc(t('set.patriot')) + '</button>' +
                   '</div></div>' +
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.accent')) + '</div><div class="sub">' + esc(t('set.accentSub')) + '</div></div>' +
                   '<div class="swatches">' +
@@ -1364,6 +1370,7 @@
               '<div><span>Assistant</span><b>offline natural-language commands</b></div>' +
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
+              '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
               '<div><span>Shortcuts</span><b>⌘Space · ⌘` · Alt+Tab · Alt+L</b></div>' +
               '<div><span>Filesystem</span><b>virtual, localStorage-backed</b></div>' +

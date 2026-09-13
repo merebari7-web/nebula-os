@@ -37,6 +37,38 @@ body[data-theme="light"]{
   --text:#141a33;
   --muted:#5b6480;
 }
+/* Patriot theme — navy glass, gold accents */
+body[data-theme="patriot"]{
+  --glass:rgba(8,15,38,.6);
+  --glass-2:rgba(11,20,48,.8);
+  --stroke:rgba(255,255,255,.1);
+  --stroke-strong:rgba(232,180,75,.42);
+  --hover:rgba(255,255,255,.08);
+  --chip:rgba(255,255,255,.06);
+  --text:#f4f6ff;
+  --muted:#a8b4d8;
+  --accent:#e8b64c;
+}
+body[data-theme="patriot"] #menubar{
+  background:rgba(6,12,32,.55);
+  border-bottom-color:rgba(232,182,76,.22);
+  color:#f4f6ff;
+}
+body[data-theme="patriot"] .btn{ color:#241802; }
+body[data-theme="patriot"] .seg button.on{ color:#241802; }
+/* gold emblem in Patriot mode */
+body[data-theme="patriot"] #boot-brand-svg #nbp-planet stop:nth-child(1){ stop-color:#fde68a; }
+body[data-theme="patriot"] #boot-brand-svg #nbp-planet stop:nth-child(2){ stop-color:#f59e0b; }
+body[data-theme="patriot"] #boot-brand-svg #nbp-planet stop:nth-child(3){ stop-color:#92400e; }
+body[data-theme="patriot"] #boot-brand-svg #nbp-ring stop:nth-child(1){ stop-color:#fbbf24; }
+body[data-theme="patriot"] #boot-brand-svg #nbp-ring stop:nth-child(2){ stop-color:#fde68a; }
+body[data-theme="patriot"] .mb-brand-svg #nbs-planet stop:nth-child(1){ stop-color:#fde68a; }
+body[data-theme="patriot"] .mb-brand-svg #nbs-planet stop:nth-child(2){ stop-color:#f59e0b; }
+body[data-theme="patriot"] .mb-brand-svg #nbs-planet stop:nth-child(3){ stop-color:#92400e; }
+body[data-theme="patriot"] .mb-brand-svg #nbs-ring stop:nth-child(1){ stop-color:#fbbf24; }
+body[data-theme="patriot"] .mb-brand-svg #nbs-ring stop:nth-child(2){ stop-color:#fde68a; }
+/* fireworks overlay (Celebrate) */
+.fw-canvas{ position:fixed; inset:0; z-index:6000; pointer-events:none; }
 
 *{ box-sizing:border-box; margin:0; padding:0; }
 html,body{ height:100%; overflow:hidden; }

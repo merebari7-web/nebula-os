@@ -23,6 +23,12 @@
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
 
+### 🎆 Patriot Edition (v2.3)
+- **Patriot theme** — a full third theme in Settings: navy glass, gold strokes, gold accent (boot emblem, dock, buttons, focus ring all follow it), persisted like the others
+- **Celebrate 🎆** — View menu → Celebrate, right-click the desktop, or `fireworks` in the terminal: canvas rockets in red/white/blue/gold, additive spark bursts, a soft synth pop per launch; auto-ends in ~12 s or on Esc, and politely skips (with a notice) when Reduce Motion is on
+- **Liberty & Old Glory wallpapers** — gold starfield and crimson-navy abstracts, pure CSS, zero image bytes
+- **Design system & accessibility** (v2.2.0) — design tokens, a global keyboard focus ring, ARIA menu/dialog/live-region semantics, Reduce-Motion support, safe-area-aware mobile layout
+
 ### macOS-style shell
 - **Top menu bar** — Apple menu, File / Edit / View / Window menus (all with real actions), right-side status icons and live clock; hover-switches between open menus, `Esc` closes
 - **Dock** — frosted glass, **icon magnification on hover** (CSS transforms, rAF-throttled), running-app indicator dots, tooltips, Launchpad rocket, and a **show-desktop edge** (minimize all / click again to restore)
@@ -128,4 +134,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.2.0 — Design & Accessibility Edition*
+*Made with ♥ in the browser. v2.3.0 — Patriot Edition*

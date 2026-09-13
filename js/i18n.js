@@ -109,7 +109,12 @@
       'app.android': 'Android',
       'and.install': 'Install APK',
       'and.center': 'App Center',
-      'and.noBridge': 'No web bridge for this package'
+      'and.noBridge': 'No web bridge for this package',
+      'ctx.celebrate': 'Celebrate',
+      'set.patriot': 'Patriot',
+      'fw.title': 'Fireworks!',
+      'fw.body': 'Enjoy the show — press Esc to stop early.',
+      'fw.reduced': 'Fireworks are disabled while Reduce Motion is on.'
     },
 
     es: {
@@ -215,7 +220,12 @@
       'app.android': 'Android',
       'and.install': 'Instalar APK',
       'and.center': 'Centro de apps',
-      'and.noBridge': 'Sin puente web para este paquete'
+      'and.noBridge': 'Sin puente web para este paquete',
+      'ctx.celebrate': 'Celebrar',
+      'set.patriot': 'Patriota',
+      'fw.title': '¡Fuegos artificiales!',
+      'fw.body': 'Disfruta el espectáculo: pulsa Esc para detenerlo.',
+      'fw.reduced': 'Los fuegos están desactivados con el movimiento reducido.'
     },
 
     fr: {
@@ -321,7 +331,12 @@
       'app.android': 'Android',
       'and.install': 'Installer un APK',
       'and.center': 'Boutique d’apps',
-      'and.noBridge': 'Aucun pont web pour ce paquet'
+      'and.noBridge': 'Aucun pont web pour ce paquet',
+      'ctx.celebrate': 'Fêter',
+      'set.patriot': 'Patriote',
+      'fw.title': 'Feu d\'artifice !',
+      'fw.body': 'Profitez du spectacle — Échap pour arrêter.',
+      'fw.reduced': 'Feu d\'artifice désactivé — « Réduire les animations » est activé.'
     },
 
     de: {
@@ -427,7 +442,12 @@
       'app.android': 'Android',
       'and.install': 'APK installieren',
       'and.center': 'App-Center',
-      'and.noBridge': 'Kein Web-Brückendienst für dieses Paket'
+      'and.noBridge': 'Kein Web-Brückendienst für dieses Paket',
+      'ctx.celebrate': 'Feiern',
+      'set.patriot': 'Patriot',
+      'fw.title': 'Feuerwerk!',
+      'fw.body': 'Genießen Sie die Show — Esc zum Beenden.',
+      'fw.reduced': 'Feuerwerk deaktiviert — „Bewegung reduzieren" ist aktiviert.'
     },
 
     pt: {
@@ -533,7 +553,12 @@
       'app.android': 'Android',
       'and.install': 'Instalar APK',
       'and.center': 'Central de apps',
-      'and.noBridge': 'Sem ponte web para este pacote'
+      'and.noBridge': 'Sem ponte web para este pacote',
+      'ctx.celebrate': 'Celebrar',
+      'set.patriot': 'Patriota',
+      'fw.title': 'Fogos de artifício!',
+      'fw.body': 'Aproveite o show — pressione Esc para parar.',
+      'fw.reduced': 'Fogos desativados — a redução de movimento está ligada.'
     },
 
     ja: {
@@ -639,7 +664,12 @@
       'app.android': 'アンドロイド',
       'and.install': 'APK をインストール',
       'and.center': 'アプリセンター',
-      'and.noBridge': 'このパッケージの Web ブリッジはありません'
+      'and.noBridge': 'このパッケージの Web ブリッジはありません',
+      'ctx.celebrate': '祝います',
+      'set.patriot': '愛国者',
+      'fw.title': '花火！',
+      'fw.body': 'お楽しみください — Esc キーで終了します。',
+      'fw.reduced': 'モーション軽減がオンなので花火は無効です。'
     },
 
     hi: {
@@ -745,7 +775,12 @@
       'app.android': 'एंड्रॉइड',
       'and.install': 'APK इंस्टॉल करें',
       'and.center': 'ऐप सेंटर',
-      'and.noBridge': 'इस पैकेज के लिए वेब ब्रिज नहीं'
+      'and.noBridge': 'इस पैकेज के लिए वेब ब्रिज नहीं',
+      'ctx.celebrate': 'جश्न मनाएं',
+      'set.patriot': 'पैट्रियोट',
+      'fw.title': 'सिलवांदी!',
+      'fw.body': 'एन्जॉय करें — Esc दबाकर शो रोकें।',
+      'fw.reduced': 'Reduce Motion चालू है, इसलिए सिलवांदी बंद हैं।'
     },
 
     ar: {
@@ -851,7 +886,12 @@
       'app.android': 'أندرويد',
       'and.install': 'تثبيت APK',
       'and.center': 'مركز التطبيقات',
-      'and.noBridge': 'لا يوجد جسر ويب لهذا الحزمة'
+      'and.noBridge': 'لا يوجد جسر ويب لهذا الحزمة',
+      'ctx.celebrate': 'احتفال',
+      'set.patriot': 'وطني',
+      'fw.title': 'ألعاب نارية!',
+      'fw.body': 'استمتع بالعرض — اضغط Esc للتوقف مبكرًا.',
+      'fw.reduced': 'ألعاب النارية معطلة لأن «تقليل الحركة» مفعّل.'
     }
   };
 
