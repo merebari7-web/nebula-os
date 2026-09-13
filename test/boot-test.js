@@ -108,9 +108,9 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.5.0', 'OS booted at v2.5.0');
+  ok(window.OS && window.OS.version === '2.6.0', 'OS booted at v2.6.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
-  ok(Object.keys(window.APPS).length === 25, '25 apps registered (' + Object.keys(window.APPS).length + ')');
+  ok(Object.keys(window.APPS).length === 27, '27 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
   ok(typeof window.OS.settings === 'object', 'settings state initialized after boot');
   ok(document.body.dataset.theme === 'dark', 'default theme dark applied');
@@ -143,7 +143,7 @@ function buildApk(pkg, ver) {
   /* ---------- desktop & dock ---------- */
   console.log('--- desktop & dock ---');
   const icons = document.querySelectorAll('#desktop-icons .desktop-icon');
-  ok(icons.length === 25, '25 desktop icons rendered');
+  ok(icons.length === 27, '27 desktop icons rendered');
   const dockIcons = document.querySelectorAll('#dock .dock-icon');
   ok(dockIcons.length >= 12, 'dock populated (' + dockIcons.length + ')');
   const startBtn = document.getElementById('start-btn');
@@ -151,14 +151,14 @@ function buildApk(pkg, ver) {
   startBtn.click();
   await sleep(80);
   const startApps = document.querySelectorAll('#start-grid .start-app');
-  ok(startApps.length === 25, 'start menu lists all 25 apps');
+  ok(startApps.length === 27, 'start menu lists all 27 apps');
   document.body.click();
   await sleep(60);
 
   /* ---------- menubar: roles + arrow-key navigation ---------- */
   console.log('--- menubar a11y ---');
   ok(document.querySelectorAll('.mb-menu[role="menu"]').length === 5, '5 menubar menus have role=menu');
-  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 21, '21 menubar items have role=menuitem');
+  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 22, '22 menubar items have role=menuitem');
   const fileMenu = document.querySelector('#menubar .mb-item[data-menu]');
   fileMenu.click();
   await sleep(60);
@@ -414,7 +414,7 @@ function buildApk(pkg, ver) {
   const home = document.getElementById('tv-home');
   ok(!home.classList.contains('hidden'), 'TV Mode opens full-screen launcher');
   const tvTiles = home.querySelectorAll('.tv-tile');
-  ok(tvTiles.length === 45, 'TV Mode shows 25 apps + 20 streams (' + tvTiles.length + ')');
+  ok(tvTiles.length === 47, 'TV Mode shows 27 apps + 20 streams (' + tvTiles.length + ')');
   ok(tvTiles[0].classList.contains('focused'), 'TV Mode starts with first tile focused');
   home.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
   await sleep(60);
@@ -505,6 +505,91 @@ function buildApk(pkg, ver) {
   ok(muW.el.querySelector('.mu-warn') !== null, 'music degrades gracefully without an AudioContext');
   window.closeWindow('music');
   await sleep(80);
+
+  /* ---------- tasks ---------- */
+  console.log('--- tasks ---');
+  window.openApp('tasks');
+  await sleep(160);
+  const tkW = window.OS.windows.get('tasks');
+  ok(!!tkW, 'tasks app opens');
+  const tkText = tkW.el.querySelector('.tk-text');
+  const tkDue = tkW.el.querySelector('.tk-due');
+  const tkPrio = tkW.el.querySelector('.tk-prio');
+  const nowD = new Date();
+  const todayStr = nowD.getFullYear() + '-' + String(nowD.getMonth() + 1).padStart(2, '0') + '-' + String(nowD.getDate()).padStart(2, '0');
+  tkText.value = 'Ship v2.6.0';
+  tkDue.value = todayStr;
+  tkW.el.querySelector('[data-add]').click();
+  await sleep(60);
+  tkText.value = 'Write release notes';
+  tkPrio.value = '2';
+  tkDue.value = '';
+  tkText.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  await sleep(60);
+  ok(tkW.el.querySelectorAll('.tk-item').length === 2, 'two tasks added (button + Enter)');
+  const tkItems = tkW.el.querySelectorAll('.tk-item');
+  ok(tkItems[0].textContent.includes('Ship v2.6.0'), 'due-today task sorts first');
+  tkItems[0].querySelector('.tk-check').click();
+  await sleep(60);
+  ok(tkW.el.querySelector('.tk-item.done') !== null, 'task completed via checkbox');
+  tkW.el.querySelector('[data-f="3"]').click();
+  await sleep(60);
+  ok(tkW.el.querySelectorAll('.tk-item').length === 1 && tkW.el.querySelector('.tk-item').classList.contains('done'), 'Done filter shows only completed');
+  tkW.el.querySelector('[data-f="0"]').click();
+  await sleep(60);
+  tkW.el.querySelector('[data-cleardone]').click();
+  await sleep(60);
+  ok(tkW.el.querySelectorAll('.tk-item').length === 1, 'clear-done removes completed task');
+  ok(tkW.el.querySelector('.tk-count').textContent.includes('1'), 'open count reflects remaining tasks');
+  window.closeWindow('tasks');
+  await sleep(80);
+
+  /* ---------- budget ---------- */
+  console.log('--- budget ---');
+  window.openApp('budget');
+  await sleep(160);
+  const bgW = window.OS.windows.get('budget');
+  ok(!!bgW, 'budget app opens');
+  bgW.el.querySelector('.bg-amt').value = '120.50';
+  bgW.el.querySelector('.bg-desc').value = 'Lunch';
+  bgW.el.querySelector('[data-add]').click();
+  await sleep(60);
+  bgW.el.querySelector('[data-bt="in"]').click();
+  await sleep(30);
+  bgW.el.querySelector('.bg-amt').value = '300';
+  bgW.el.querySelector('.bg-desc').value = 'Paycheck';
+  bgW.el.querySelector('[data-add]').click();
+  await sleep(60);
+  const bgIn = bgW.el.querySelector('[data-v="in"]').textContent;
+  const bgOut = bgW.el.querySelector('[data-v="out"]').textContent;
+  const bgNet = bgW.el.querySelector('[data-v="net"]').textContent;
+  ok(bgIn === '300.00', 'income card sums this month (' + bgIn + ')');
+  ok(bgOut === '120.50', 'expense card sums this month (' + bgOut + ')');
+  ok(bgNet === '179.50', 'net card computes this month (' + bgNet + ')');
+  ok(bgW.el.querySelectorAll('.bg-row').length === 2, 'both transactions listed');
+  window.closeWindow('budget');
+  await sleep(80);
+
+  /* ---------- shortcuts reference ---------- */
+  console.log('--- shortcuts ---');
+  ok(!!window.OS.help, 'OS.help exposed');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: '?', bubbles: true }));
+  await sleep(80);
+  let helpEl = document.getElementById('help');
+  ok(!!helpEl && !!helpEl.querySelector('.help-card'), '? key opens shortcuts reference');
+  ok(helpEl.textContent.includes('Spotlight') && helpEl.querySelectorAll('.help-row').length >= 10, 'shortcuts list renders grouped rows');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(60);
+  ok(!document.getElementById('help'), 'Esc closes shortcuts reference');
+  const brand2 = document.querySelector('#mb-brand');
+  brand2.click();
+  await sleep(60);
+  brand2.querySelector('[data-act="help"]').click();
+  await sleep(60);
+  ok(!!document.getElementById('help'), 'Nebula menu > Shortcuts reopens it');
+  document.getElementById('help').querySelector('[data-hc]').click();
+  await sleep(60);
+  ok(!document.getElementById('help'), 'close button dismisses it');
 
   /* ---------- backup (last: restore path reloads after 500ms) ---------- */
   console.log('--- backup ---');

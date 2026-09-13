@@ -1,7 +1,7 @@
 {
   "name": "Nebula OS",
   "short_name": "Nebula",
-  "description": "An operating system for the web — 25 apps, macOS-style shell, window manager, virtual filesystem, live markets. 100% in your browser.",
+  "description": "An operating system for the web — 27 apps, macOS-style shell, window manager, virtual filesystem, live markets. 100% in your browser.",
   "id": "nebula-os",
   "start_url": "/",
   "scope": "/",

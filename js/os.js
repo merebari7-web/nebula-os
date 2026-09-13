@@ -431,7 +431,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.5.0',
+    version: '2.6.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -1061,6 +1061,53 @@
   }
   OS.tour = { start: tourStart, close: (f) => tourClose(f !== false) };
 
+  /* ---------- keyboard shortcuts reference ---------- */
+  function helpGroups() {
+    return [
+      { h: t('help.g1'), rows: [
+        [t('help.spot'), 'Ctrl/⌘ + Space'],
+        [t('help.mission'), 'Ctrl/⌘ + `'],
+        [t('help.lock'), 'Alt + L'],
+        [t('help.newNote'), 'Ctrl/⌘ + N'],
+        [t('help.newTerm'), 'Ctrl/⌘ + T'],
+        [t('help.wall'), 'Ctrl/⌘ + D']
+      ] },
+      { h: t('help.g2'), rows: [
+        [t('help.move'), '← → ↑ ↓'],
+        [t('help.resize'), 'Shift + ← → ↑ ↓'],
+        [t('help.menus'), '← → ↑ ↓ + Enter / Esc'],
+        [t('help.min'), 'Window menu'],
+        [t('help.tour'), 'Esc']
+      ] }
+    ];
+  }
+  function helpClose() {
+    const old = byId('help');
+    if (old) old.remove();
+  }
+  function helpOpen() {
+    if (byId('help')) return;
+    const host = el('div', 'help-overlay');
+    host.id = 'help';
+    host.innerHTML =
+      '<div class="help-card" role="dialog" aria-modal="true" aria-label="' + escapeHtml(t('help.title')) + '">' +
+        '<div class="help-top"><b>⌨️ ' + escapeHtml(t('help.title')) + '</b>' +
+          '<button class="btn ghost sm" data-hc aria-label="close">✕</button></div>' +
+        helpGroups().map((g) =>
+          '<div class="help-group"><div class="help-gh">' + escapeHtml(g.h) + '</div>' +
+            g.rows.map((r) => '<div class="help-row"><span>' + escapeHtml(r[0]) + '</span><kbd>' + escapeHtml(r[1]) + '</kbd></div>').join('') +
+          '</div>').join('') +
+        '<p class="help-note">' + escapeHtml(t('help.note')) + '</p>' +
+      '</div>';
+    host.addEventListener('click', (e) => {
+      if (e.target === host || e.target.closest('[data-hc]')) helpClose();
+    });
+    document.body.appendChild(host);
+    const b = host.querySelector('[data-hc]');
+    if (b) b.focus();
+  }
+  OS.help = { open: helpOpen, close: helpClose };
+
   /* ---------- clock ---------- */
   function tickClock() {
     const now = new Date();
@@ -1249,7 +1296,7 @@
   }
 
   /* ---------- desktop icons (interactive) ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'contacts', 'music', 'backup', 'settings', 'about', 'audit', 'tv'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'contacts', 'music', 'backup', 'tasks', 'budget', 'settings', 'about', 'audit', 'tv'];
 
   let desktopState = loadDesktopState();
   function loadDesktopState() {
@@ -1619,6 +1666,7 @@
       celebrate: () => OS.celebrate(),
       tv: () => OS.tv && OS.tv.toggle(),
       tour: () => OS.tour && OS.tour.start(),
+      help: () => OS.help && OS.help.open(),
       arrange: () => arrangeIcons(),
       showDesktop: () => showDesktopAction(),
       mission: () => toggleMission(),
@@ -1899,7 +1947,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.5.0');
+    Audit.log('system.boot', 'Nebula OS v2.6.0');
     OS.applySettings();
     applyI18n();
     buildLock();
@@ -1938,6 +1986,11 @@
         if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tourClose(false); }
         return;
       }
+      if (byId('help')) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); helpClose(); }
+        return;
+      }
+      if (e.key === '?') { e.preventDefault(); helpOpen(); return; }
       if (e.altKey && e.key === 'Tab') {
         e.preventDefault();
         if (!altTab.active) openAltTab();

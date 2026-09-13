@@ -1,6 +1,6 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 25 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 27 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
@@ -22,6 +22,11 @@
 - **App Center** — curated catalog of 19 popular apps with one-tap install, search, and recents
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
+
+### 📈 Productivity Edition (v2.6)
+- **Tasks** — local task manager: due dates, three priorities, live filters (All / Today / Overdue / Done), overdue flags, open-count footer, clear-done
+- **Budget** — local income/expense ledger: per-month income, expenses and net cards, categories, per-entry delete, signed amounts
+- **Shortcuts reference** — press **?** (or Nebula menu → Shortcuts) for a grouped keyboard-shortcut cheat sheet; fully translated, Esc to close
 
 ### 🧭 New Apps (v2.5)
 - **Contacts** — a local people manager: add/edit/delete, live search, and real **vCard (.vcf) + CSV export/import** for round-tripping with any phone or address book. Stored locally, nothing uploaded
@@ -153,4 +158,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.5.0 — New Apps Edition*
+*Made with ♥ in the browser. v2.6.0 — Productivity Edition*

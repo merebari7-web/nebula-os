@@ -21,7 +21,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="docs/icon-192.png">
-<link rel="stylesheet" href="css/style.css?v=2.5.0">
+<link rel="stylesheet" href="css/style.css?v=2.6.0">
 </head>
 <body data-theme="dark" data-motion="full">
 
@@ -65,7 +65,7 @@
       </div>
       <div class="boot-bar-wrap"><div id="boot-bar"></div></div>
       <p class="boot-sub" id="boot-sub">Starting your universe…</p>
-      <p class="boot-ver">v2.5.0 · web build · 8 languages</p>
+      <p class="boot-ver">v2.6.0 · web build · 8 languages</p>
     </div>
   </div>
 
@@ -101,6 +101,7 @@
           <div class="mb-menu" role="menu">
             <button class="mb-mi" role="menuitem" tabindex="-1" data-act="about"><span data-i18n="ctx.about">About Nebula OS</span></button>
             <button class="mb-mi" role="menuitem" tabindex="-1" data-act="tour"><span data-i18n="tour.menu">Restart tour</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="help"><span data-i18n="help.menu">Shortcuts</span><span class="mb-key">?</span></button>
             <div class="mb-sep"></div>
             <button class="mb-mi" role="menuitem" tabindex="-1" data-act="settings"><span data-i18n="app.settings">Settings…</span></button>
             <div class="mb-sep"></div>
@@ -251,12 +252,12 @@
     </div>
   </div>
 
-  <script src="js/fs.js?v=2.5.0"></script>
-  <script src="js/i18n.js?v=2.5.0"></script>
-  <script src="js/os.js?v=2.5.0"></script>
-  <script src="js/apps.js?v=2.5.0"></script>
-  <script src="js/apps-extra.js?v=2.5.0"></script>
-  <script src="js/android.js?v=2.5.0"></script>
+  <script src="js/fs.js?v=2.6.0"></script>
+  <script src="js/i18n.js?v=2.6.0"></script>
+  <script src="js/os.js?v=2.6.0"></script>
+  <script src="js/apps.js?v=2.6.0"></script>
+  <script src="js/apps-extra.js?v=2.6.0"></script>
+  <script src="js/android.js?v=2.6.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });

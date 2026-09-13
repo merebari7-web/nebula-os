@@ -226,7 +226,7 @@ function resolvePath(cwd, arg) {
                 break;
               }
               case 'uname':
-                print('Nebula 2.5.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.6.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -1402,6 +1402,7 @@ function resolvePath(cwd, arg) {
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
               '<div><span>New in 2.5</span><b>Contacts (vCard/CSV) · Music (local audio) · Backup (one-file restore) · Onboarding tour</b></div>' +
+              '<div><span>New in 2.6</span><b>Tasks (due dates · priorities) · Budget (income/expense ledger) · Shortcuts reference (press ?)</b></div>' +
               '<div><span>Compliance</span><b>WCAG 2.1 AA · Section 508 · <a href="docs/a11y.html" target="_blank" rel="noopener">Accessibility &amp; security statement ↗</a></b></div>' +
               '<div><span>Audit</span><b>immutable local event log · PIN (salted SHA-256) · auto-lock</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
@@ -2061,6 +2062,221 @@ function resolvePath(cwd, arg) {
               notify('⬆️', t('bk.restored'), f.name);
               setTimeout(() => location.reload(), 500);
             });
+          });
+          render();
+        }
+      });
+    }
+  });
+
+
+  /* ============================================================
+     TASKS — local task manager (due dates · priorities)
+     ============================================================ */
+  const TASK_KEY = 'nebula.tasks.v1';
+  registerApp({
+    id: 'tasks',
+    title: 'Tasks',
+    titleKey: 'app.tasks',
+    icon: '✅',
+    tile: 'linear-gradient(135deg,#22c55e,#10b981)',
+    open() {
+      createWindow({
+        id: 'tasks',
+        appId: 'tasks',
+        title: t('app.tasks'),
+        icon: '✅',
+        width: 700,
+        height: 500,
+        content(winW) {
+          const box = $el('div', 'tasks');
+          box.innerHTML =
+            '<div class="tk-form">' +
+              '<input class="tk-text" placeholder="' + esc(t('tk.add')) + '" aria-label="' + esc(t('tk.add')) + '">' +
+              '<input type="date" class="tk-due" title="' + esc(t('tk.due')) + '" aria-label="' + esc(t('tk.due')) + '">' +
+              '<select class="tk-prio" title="' + esc(t('tk.prio')) + '" aria-label="' + esc(t('tk.prio')) + '">' +
+                '<option value="0">' + esc(t('tk.p0')) + '</option>' +
+                '<option value="1" selected>' + esc(t('tk.p1')) + '</option>' +
+                '<option value="2">' + esc(t('tk.p2')) + '</option>' +
+              '</select>' +
+              '<button class="btn sm" data-add>＋</button>' +
+            '</div>' +
+            '<div class="tk-filters">' +
+              ['tk.fAll', 'tk.fToday', 'tk.fOverdue', 'tk.fDone'].map((k, i) =>
+                '<button class="tk-f' + (i === 0 ? ' on' : '') + '" data-f="' + i + '">' + esc(t(k)) + '</button>').join('') +
+            '</div>' +
+            '<div class="tk-list"></div>' +
+            '<div class="tk-foot"><span class="tk-count"></span><span class="spacer"></span>' +
+              '<button class="btn ghost sm" data-cleardone>' + esc(t('tk.clearDone')) + '</button></div>';
+          winW.body.appendChild(box);
+
+          const listEl = box.querySelector('.tk-list');
+          const textEl = box.querySelector('.tk-text'), dueEl = box.querySelector('.tk-due'), prioEl = box.querySelector('.tk-prio');
+          const countEl = box.querySelector('.tk-count');
+          let filter = 0;
+          let tasks = [];
+          try { tasks = JSON.parse(localStorage.getItem(TASK_KEY) || '[]'); } catch (e) { tasks = []; }
+          const save = () => { try { localStorage.setItem(TASK_KEY, JSON.stringify(tasks)); } catch (e) {} };
+          const todayStr = () => {
+            const d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          };
+          const PRIO = ['#8a93a6', '#3b82f6', '#f87171'];
+
+          function visible() {
+            const t0 = todayStr();
+            let v = tasks.slice();
+            if (filter === 1) v = v.filter((x) => !x.done && x.due === t0);
+            else if (filter === 2) v = v.filter((x) => !x.done && x.due && x.due < t0);
+            else if (filter === 3) v = v.filter((x) => x.done);
+            v.sort((a, b) => (a.done - b.done) || ((a.due || '9999') < (b.due || '9999') ? -1 : 1) || (b.prio - a.prio));
+            return v;
+          }
+          function render() {
+            const v = visible();
+            listEl.innerHTML = '';
+            if (!v.length) listEl.appendChild($el('div', 'fm-empty', esc(t('tk.empty'))));
+            v.forEach((x) => {
+              const t0 = todayStr();
+              const overdue = !x.done && x.due && x.due < t0;
+              const row = $el('div', 'tk-item' + (x.done ? ' done' : ''));
+              row.innerHTML =
+                '<button class="tk-check' + (x.done ? ' on' : '') + '" aria-label="toggle task">' + (x.done ? '✓' : '') + '</button>' +
+                '<span class="tk-px" style="background:' + PRIO[x.prio] + '"></span>' +
+                '<b class="tk-txt">' + esc(x.text) + '</b>' +
+                (x.due ? '<span class="tk-duec' + (overdue ? ' late' : '') + '">📅 ' + esc(x.due) + (overdue ? ' ⚠' : '') + '</span>' : '') +
+                '<button class="tk-x" aria-label="delete task">✕</button>';
+              row.querySelector('.tk-check').addEventListener('click', () => { x.done = !x.done; x.updated = Date.now(); save(); render(); });
+              row.querySelector('.tk-x').addEventListener('click', () => { tasks = tasks.filter((y) => y.id !== x.id); save(); render(); });
+              listEl.appendChild(row);
+            });
+            const openN = tasks.filter((x) => !x.done).length;
+            countEl.textContent = t('tk.open').replace('%d', openN);
+          }
+          function add() {
+            const text = textEl.value.trim();
+            if (!text) return;
+            tasks.unshift({ id: Date.now() + Math.floor(Math.random() * 1e4), text, due: dueEl.value || '', prio: parseInt(prioEl.value, 10), done: false, created: Date.now(), updated: Date.now() });
+            textEl.value = ''; dueEl.value = ''; prioEl.value = '1';
+            save(); render();
+          }
+          box.querySelector('[data-add]').addEventListener('click', add);
+          textEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') add(); });
+          box.querySelectorAll('.tk-f').forEach((b) => b.addEventListener('click', () => {
+            filter = parseInt(b.dataset.f, 10);
+            box.querySelectorAll('.tk-f').forEach((x) => x.classList.toggle('on', x === b));
+            render();
+          }));
+          box.querySelector('[data-cleardone]').addEventListener('click', () => {
+            if (!tasks.some((x) => x.done)) return;
+            tasks = tasks.filter((x) => !x.done);
+            save(); render();
+          });
+          winW.hooks.focus = () => textEl.focus({ preventScroll: true });
+          render();
+        }
+      });
+    }
+  });
+
+  /* ============================================================
+     BUDGET — local income/expense ledger (monthly net)
+     ============================================================ */
+  const BG_KEY = 'nebula.budget.v1';
+  registerApp({
+    id: 'budget',
+    title: 'Budget',
+    titleKey: 'app.budget',
+    icon: '💰',
+    tile: 'linear-gradient(135deg,#fbbf24,#f59e0b)',
+    open() {
+      createWindow({
+        id: 'budget',
+        appId: 'budget',
+        title: t('app.budget'),
+        icon: '💰',
+        width: 760,
+        height: 520,
+        content(winW) {
+          const box = $el('div', 'budget');
+          const cats = t('bg.cats').split('|');
+          const d = new Date();
+          const today = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+          box.innerHTML =
+            '<div class="bg-cards">' +
+              '<div class="bg-card in"><span>' + esc(t('bg.income')) + '</span><b data-v="in">0.00</b></div>' +
+              '<div class="bg-card out"><span>' + esc(t('bg.expense')) + '</span><b data-v="out">0.00</b></div>' +
+              '<div class="bg-card net"><span>' + esc(t('bg.net')) + '</span><b data-v="net">0.00</b></div>' +
+            '</div>' +
+            '<div class="bg-form">' +
+              '<input class="bg-amt" type="number" min="0" step="0.01" placeholder="' + esc(t('bg.amount')) + '" aria-label="' + esc(t('bg.amount')) + '">' +
+              '<div class="seg">' +
+                '<button data-bt="out">' + esc(t('bg.typeOut')) + '</button>' +
+                '<button data-bt="in">' + esc(t('bg.typeIn')) + '</button>' +
+              '</div>' +
+              '<select class="bg-cat" aria-label="' + esc(t('bg.cat')) + '">' + cats.map((c) => '<option>' + esc(c) + '</option>').join('') + '</select>' +
+              '<input type="date" class="bg-date" value="' + today + '" aria-label="' + esc(t('bg.date')) + '">' +
+              '<input class="bg-desc" placeholder="' + esc(t('bg.desc')) + '" aria-label="' + esc(t('bg.desc')) + '">' +
+              '<button class="btn sm" data-add>' + esc(t('bg.add')) + '</button>' +
+            '</div>' +
+            '<div class="bg-list"></div>';
+          winW.body.appendChild(box);
+
+          let type = 'out';
+          box.querySelectorAll('[data-bt]').forEach((b) => {
+            b.classList.toggle('on', b.dataset.bt === type);
+            b.addEventListener('click', () => {
+              type = b.dataset.bt;
+              box.querySelectorAll('[data-bt]').forEach((x) => x.classList.toggle('on', x === b));
+            });
+          });
+          let items = [];
+          try { items = JSON.parse(localStorage.getItem(BG_KEY) || '[]'); } catch (e) { items = []; }
+          const save = () => { try { localStorage.setItem(BG_KEY, JSON.stringify(items)); } catch (e) {} };
+          const money = (n) => Math.abs(n).toFixed(2);
+          const nowM = today.slice(0, 7);
+
+          function render() {
+            let inM = 0, outM = 0;
+            items.forEach((x) => {
+              if ((x.date || '').slice(0, 7) === nowM) {
+                if (x.type === 'in') inM += x.amt; else outM += x.amt;
+              }
+            });
+            box.querySelector('[data-v="in"]').textContent = money(inM);
+            box.querySelector('[data-v="out"]').textContent = money(outM);
+            const net = inM - outM;
+            const netEl = box.querySelector('[data-v="net"]');
+            netEl.textContent = (net < 0 ? '−' : '') + money(net);
+            netEl.parentElement.classList.toggle('neg', net < 0);
+            const listEl = box.querySelector('.bg-list');
+            listEl.innerHTML = '';
+            if (!items.length) listEl.appendChild($el('div', 'fm-empty', esc(t('bg.empty'))));
+            items.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).forEach((x) => {
+              const row = $el('div', 'bg-row');
+              row.innerHTML =
+                '<span class="bg-when">' + esc(x.date) + '</span>' +
+                '<span class="bg-chip">' + esc(x.cat) + '</span>' +
+                '<b class="bg-txt">' + esc(x.desc || (x.type === 'in' ? t('bg.typeIn') : t('bg.typeOut'))) + '</b>' +
+                '<b class="bg-amtv ' + x.type + '">' + (x.type === 'in' ? '+' : '−') + money(x.amt) + '</b>' +
+                '<button class="bg-x" aria-label="delete transaction">✕</button>';
+              row.querySelector('.bg-x').addEventListener('click', () => { items = items.filter((y) => y.id !== x.id); save(); render(); });
+              listEl.appendChild(row);
+            });
+          }
+          box.querySelector('[data-add]').addEventListener('click', () => {
+            const amt = parseFloat(box.querySelector('.bg-amt').value);
+            if (!(amt > 0)) { notify('⚠️', t('bg.needAmt')); return; }
+            items.unshift({
+              id: Date.now() + Math.floor(Math.random() * 1e4),
+              type, amt: Math.round(amt * 100) / 100,
+              cat: box.querySelector('.bg-cat').value,
+              desc: box.querySelector('.bg-desc').value.trim(),
+              date: box.querySelector('.bg-date').value || today
+            });
+            box.querySelector('.bg-amt').value = '';
+            box.querySelector('.bg-desc').value = '';
+            save(); render();
           });
           render();
         }
