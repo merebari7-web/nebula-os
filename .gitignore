@@ -22,3 +22,8 @@ test/splice27.py
 test/patch_test27.py
 test/diag.py
 test/i18n_v270.py
+test/snip_widget.js
+test/snip_pub*.js
+test/splice28*.py
+test/patch_test28.py
+test/i18n_v280.py

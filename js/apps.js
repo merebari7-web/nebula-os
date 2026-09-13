@@ -262,7 +262,7 @@ function resolvePath(cwd, arg) {
                 break;
               }
               case 'uname':
-                print('Nebula 2.7.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.8.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -647,6 +647,7 @@ function resolvePath(cwd, arg) {
                   '<button data-view="preview">' + esc(t('note.view')) + '</button>' +
                 '</div>' +
                 '<button class="btn ghost sm" data-copy>' + esc(t('note.copy')) + '</button>' +
+                '<button class="btn ghost sm" data-pub>📤 ' + esc(t('note.pub')) + '</button>' +
               '</div>' +
               '<textarea class="notes-body" placeholder="Start typing… everything autosaves." spellcheck="false"></textarea>' +
               '<div class="notes-prev hidden"></div>' +
@@ -718,6 +719,25 @@ function resolvePath(cwd, arg) {
               try { document.execCommand('copy'); done(); } catch (e) {}
               ta.remove();
             }
+          });
+          root.querySelector('[data-pub]').addEventListener('click', () => {
+            const title = titleEl.value.trim() || 'Untitled';
+            const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'note';
+            const doc = '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + esc(title) + '</title><style>' +
+              'body{font:16px/1.65 -apple-system,BlinkMacSystemFont,system-ui,sans-serif;max-width:720px;margin:48px auto;padding:0 22px;color:#1c2333;background:#fafbfe}' +
+              'h1{line-height:1.25;margin-bottom:8px}h2,h3,h4{margin-top:22px}' +
+              'pre{background:#f1f3f9;border:1px solid #dde2ee;border-radius:8px;padding:12px 14px;overflow-x:auto;font:13px/1.5 ui-monospace,SFMono-Regular,monospace}' +
+              'code{font-family:ui-monospace,SFMono-Regular,monospace;background:#f1f3f9;border-radius:4px;padding:1px 5px;font-size:.9em}' +
+              'blockquote{border-left:3px solid #5b7cfa;background:#f1f3f9;margin:12px 0;padding:8px 14px;border-radius:0 8px 8px 0;color:#445}' +
+              'a{color:#5b7cfa}hr{border:none;border-top:1px solid #dde2ee;margin:18px 0}</style></head><body><main><h1>' + esc(title) + '</h1>' +
+              mdRender(bodyEl.value) +
+              '<p style="color:#98a0b3;font-size:12px;margin-top:44px">— Exported from Nebula OS v' + window.OS.version + ' —</p></main></body></html>';
+            const a = document.createElement('a');
+            a.href = 'data:text/html;charset=utf-8,' + encodeURIComponent(doc);
+            a.download = slug + '.html';
+            document.body.appendChild(a); a.click(); a.remove();
+            Audit.log('notes.published', title);
+            notify('📤', t('note.pubbed'), title);
           });
           titleEl.addEventListener('input', () => {
             if (!current) return;

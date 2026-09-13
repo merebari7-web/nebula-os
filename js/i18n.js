@@ -247,7 +247,19 @@
       'spot.notes': 'Note',
       'spot.contact': 'Contact',
       'spot.task': 'Task',
-      'spot.txn': 'Transaction'
+      'spot.txn': 'Transaction',
+      'dw.title': 'Today',
+      'dw.t': 'Tasks',
+      'dw.b': 'Budget',
+      'dw.due': '%d due today',
+      'dw.late': '%d overdue',
+      'dw.netM': 'this month',
+      'dw.ok': 'All clear — nothing due.',
+      'dw.next': 'Up next',
+      'rem.due': '%s is due today',
+      'rem.late': '%s is overdue (due %s)',
+      'note.pub': 'Publish HTML',
+      'note.pubbed': 'HTML page exported'
     },
 
     es: {
@@ -491,7 +503,19 @@
       'spot.notes': 'Nota',
       'spot.contact': 'Contacto',
       'spot.task': 'Tarea',
-      'spot.txn': 'Movimiento'
+      'spot.txn': 'Movimiento',
+      'dw.title': 'Hoy',
+      'dw.t': 'Tareas',
+      'dw.b': 'Presupuesto',
+      'dw.due': '%d para hoy',
+      'dw.late': '%d atrasadas',
+      'dw.netM': 'este mes',
+      'dw.ok': 'Todo claro — nada pendiente.',
+      'dw.next': 'A continuación',
+      'rem.due': '%s vence hoy',
+      'rem.late': '%s está atrasada (vencía el %s)',
+      'note.pub': 'Publicar HTML',
+      'note.pubbed': 'Página HTML exportada'
     },
 
     fr: {
@@ -735,7 +759,19 @@
       'spot.notes': 'Note',
       'spot.contact': 'Contact',
       'spot.task': 'Tâche',
-      'spot.txn': 'Transaction'
+      'spot.txn': 'Transaction',
+      'dw.title': 'Aujourd\'hui',
+      'dw.t': 'Tâches',
+      'dw.b': 'Budget',
+      'dw.due': '%d à faire aujourd\'hui',
+      'dw.late': '%d en retard',
+      'dw.netM': 'ce mois-ci',
+      'dw.ok': 'Tout est clair — rien d\'échéant.',
+      'dw.next': 'À suivre',
+      'rem.due': '%s est à faire aujourd\'hui',
+      'rem.late': '%s est en retard (échéance %s)',
+      'note.pub': 'Publier en HTML',
+      'note.pubbed': 'Page HTML exportée'
     },
 
     de: {
@@ -979,7 +1015,19 @@
       'spot.notes': 'Notiz',
       'spot.contact': 'Kontakt',
       'spot.task': 'Aufgabe',
-      'spot.txn': 'Buchung'
+      'spot.txn': 'Buchung',
+      'dw.title': 'Heute',
+      'dw.t': 'Aufgaben',
+      'dw.b': 'Budget',
+      'dw.due': '%d heute fällig',
+      'dw.late': '%d überfällig',
+      'dw.netM': 'diesen Monat',
+      'dw.ok': 'Alles klar — nichts fällig.',
+      'dw.next': 'Als Nächstes',
+      'rem.due': '%s ist heute fällig',
+      'rem.late': '%s ist überfällig (fällig am %s)',
+      'note.pub': 'Als HTML veröffentlichen',
+      'note.pubbed': 'HTML-Seite exportiert'
     },
 
     pt: {
@@ -1223,7 +1271,19 @@
       'spot.notes': 'Nota',
       'spot.contact': 'Contato',
       'spot.task': 'Tarefa',
-      'spot.txn': 'Transação'
+      'spot.txn': 'Transação',
+      'dw.title': 'Hoje',
+      'dw.t': 'Tarefas',
+      'dw.b': 'Orçamento',
+      'dw.due': '%d para hoje',
+      'dw.late': '%d atrasadas',
+      'dw.netM': 'este mês',
+      'dw.ok': 'Tudo em dia — nada vencendo.',
+      'dw.next': 'A seguir',
+      'rem.due': '%s vence hoje',
+      'rem.late': '%s está atrasada (vencia em %s)',
+      'note.pub': 'Publicar HTML',
+      'note.pubbed': 'Página HTML exportada'
     },
 
     ja: {
@@ -1467,7 +1527,19 @@
       'spot.notes': 'メモ',
       'spot.contact': '連絡先',
       'spot.task': 'タスク',
-      'spot.txn': '取引'
+      'spot.txn': '取引',
+      'dw.title': '今日',
+      'dw.t': 'タスク',
+      'dw.b': '家計',
+      'dw.due': '今日 %d件',
+      'dw.late': '期限切れ %d件',
+      'dw.netM': '今月',
+      'dw.ok': 'クリアです — 期日なし。',
+      'dw.next': '次は',
+      'rem.due': '%s が今日期限です',
+      'rem.late': '%s が期限超過（期日 %s）',
+      'note.pub': 'HTML として公開',
+      'note.pubbed': 'HTML ページをエクスポート'
     },
 
     hi: {
@@ -1711,7 +1783,19 @@
       'spot.notes': 'नोट',
       'spot.contact': 'संपर्क',
       'spot.task': 'कार्य',
-      'spot.txn': 'लेन-देन'
+      'spot.txn': 'लेन-देन',
+      'dw.title': 'आज',
+      'dw.t': 'कार्य',
+      'dw.b': 'बजट',
+      'dw.due': '%d आज की',
+      'dw.late': '%d पीछे',
+      'dw.netM': 'इस महीने',
+      'dw.ok': 'सब ठीक — कुछ भी बाकी नहीं।',
+      'dw.next': 'अगला',
+      'rem.due': '%s आज समाप्त होता है',
+      'rem.late': '%s पिछड़ा है (समाप्ति %s)',
+      'note.pub': 'HTML प्रकाशित करें',
+      'note.pubbed': 'HTML पृष्ठ निर्यात हुआ'
     },
 
     ar: {
@@ -1955,7 +2039,19 @@
       'spot.notes': 'ملاحظة',
       'spot.contact': 'جهة اتصال',
       'spot.task': 'مهمة',
-      'spot.txn': 'معاملة'
+      'spot.txn': 'معاملة',
+      'dw.title': 'اليوم',
+      'dw.t': 'المهام',
+      'dw.b': 'الميزانية',
+      'dw.due': '%d مستحقة اليوم',
+      'dw.late': '%d متأخرة',
+      'dw.netM': 'هذا الشهر',
+      'dw.ok': 'كل شيء واضح — لا مستحقات.',
+      'dw.next': 'التالي',
+      'rem.due': '%s مستحقة اليوم',
+      'rem.late': '%s متأخرة (تستحق في %s)',
+      'note.pub': 'نشر HTML',
+      'note.pubbed': 'تم تصدير صفحة HTML'
     }
   };
 

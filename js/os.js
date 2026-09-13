@@ -431,7 +431,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.7.0',
+    version: '2.8.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -1362,6 +1362,85 @@
     });
   }
 
+  /* ---------- today widget (desktop) ---------- */
+  function todayKeyNow() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function widgetRefresh() {
+    const host = byId('today-widget');
+    if (!host) return;
+    const now = new Date();
+    const t0 = todayKeyNow();
+    let tasks = [];
+    try { tasks = JSON.parse(localStorage.getItem('nebula.tasks.v1') || '[]'); } catch (e) {}
+    let items = [];
+    try { items = JSON.parse(localStorage.getItem('nebula.budget.v1') || '[]'); } catch (e) {}
+    const openD = tasks.filter((x) => !x.done && x.due);
+    const due = openD.filter((x) => x.due === t0);
+    const late = openD.filter((x) => x.due < t0);
+    const m = t0.slice(0, 7);
+    let inM = 0, outM = 0;
+    items.forEach((x) => { if ((x.date || '').slice(0, 7) === m) { if (x.type === 'in') inM += x.amt; else outM += x.amt; } });
+    const net = inM - outM;
+    const upNext = openD.slice().sort((a, b) => (a.due < b.due ? -1 : 1)).slice(0, 3);
+    const taskLine = due.length || late.length
+      ? t('dw.due').replace('%d', due.length) + (late.length ? ' · ' + t('dw.late').replace('%d', late.length) : '')
+      : t('dw.ok');
+    host.innerHTML =
+      '<div class="tw-head"><b>📅 ' + escapeHtml(t('dw.title')) + ' — ' + escapeHtml(now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })) + '</b></div>' +
+      '<div class="tw-row" data-open="tasks" role="button" tabindex="0">' +
+        '<span class="tw-ic">✅</span><span class="tw-lb">' + escapeHtml(t('dw.t')) + '</span>' +
+        '<span class="tw-val">' + escapeHtml(taskLine) + '</span></div>' +
+      '<div class="tw-row" data-open="budget" role="button" tabindex="0">' +
+        '<span class="tw-ic">💰</span><span class="tw-lb">' + escapeHtml(t('dw.b')) + '</span>' +
+        '<span class="tw-val' + (net < 0 ? ' neg' : ' pos') + '">' + (net < 0 ? '−' : '') + Math.abs(net).toFixed(2) + ' <small>' + escapeHtml(t('dw.netM')) + '</small></span></div>' +
+      (upNext.length ? '<div class="tw-next">' + escapeHtml(t('dw.next')) + upNext.map((x) =>
+        '<div class="tw-item" data-open="tasks" role="button" tabindex="0"><span class="tw-dot' + (x.due < t0 ? ' late' : '') + '"></span>' +
+        escapeHtml(String(x.text).slice(0, 34)) + '</div>').join('') + '</div>' : '');
+    host.querySelectorAll('[data-open]').forEach((r) => {
+      const go = () => openApp(r.dataset.open);
+      r.addEventListener('click', go);
+      r.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+    });
+  }
+  function buildTodayWidget() {
+    if (byId('today-widget')) return;
+    const host = el('div', 'today-widget');
+    host.id = 'today-widget';
+    host.setAttribute('role', 'complementary');
+    host.setAttribute('aria-label', t('dw.title'));
+    const desk = byId('desktop');
+    if (!desk) return;
+    desk.appendChild(host);
+    widgetRefresh();
+    setInterval(widgetRefresh, 30000);
+  }
+  OS.widget = { refresh: widgetRefresh, build: buildTodayWidget };
+  /* ---------- task reminders ---------- */
+  const REM_KEY = 'nebula.reminders.v1';
+  function taskReminders() {
+    let tasks = [];
+    try { tasks = JSON.parse(localStorage.getItem('nebula.tasks.v1') || '[]'); } catch (e) {}
+    if (!tasks.length) return;
+    const t0 = todayKeyNow();
+    let seen = {};
+    try { seen = JSON.parse(localStorage.getItem(REM_KEY) || '{}'); } catch (e) {}
+    let changed = false;
+    tasks.forEach((x) => {
+      if (x.done || !x.due) return;
+      const key = x.id + '@' + x.due;
+      if (seen[key] === t0) return;
+      const label = String(x.text).slice(0, 60);
+      if (x.due === t0) notify('⏰', t('rem.due').replace('%s', label));
+      else if (x.due < t0) notify('⚠️', t('rem.late').replace('%s', String(x.text).slice(0, 40)).replace('%s', x.due));
+      Audit.log('task.reminder', (x.due === t0 ? 'due-today ' : 'overdue ') + label);
+      seen[key] = t0;
+      changed = true;
+    });
+    if (changed) { try { localStorage.setItem(REM_KEY, JSON.stringify(seen)); } catch (e) {} }
+  }
+  OS.remind = { run: taskReminders };
   function selectIconNode(ic, on) {
     document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
     if (on && ic) ic.classList.add('sel');
@@ -1966,7 +2045,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.7.0');
+    Audit.log('system.boot', 'Nebula OS v2.8.0');
     OS.applySettings();
     applyI18n();
     buildLock();
@@ -2053,6 +2132,9 @@
 
     boot();
     if (!OS.settings.tourSeen) setTimeout(tourStart, 2400);
+  buildTodayWidget();
+  setTimeout(taskReminders, 6000);
+  setInterval(taskReminders, 60000);
     setTimeout(() => {
       if (!localStorage.getItem('nebula.welcomed')) {
         localStorage.setItem('nebula.welcomed', '1');

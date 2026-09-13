@@ -108,7 +108,7 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.7.0', 'OS booted at v2.7.0');
+  ok(window.OS && window.OS.version === '2.8.0', 'OS booted at v2.8.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
   ok(Object.keys(window.APPS).length === 27, '27 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
@@ -627,6 +627,9 @@ function buildApk(pkg, ver) {
   ndW.el.querySelector('[data-view="edit"]').click();
   await sleep(60);
   ok(ndPrev.classList.contains('hidden'), 'edit mode hides preview');
+  ndW.el.querySelector('[data-pub]').click();
+  await sleep(100);
+  ok(window.Audit.read().some((e) => e.event === 'notes.published'), 'notes publish audited');
   window.closeWindow('notes');
   await sleep(80);
 
@@ -653,6 +656,32 @@ function buildApk(pkg, ver) {
   ok(!calPanel.classList.contains('hidden') && calPanel.textContent.includes('Cal test task'), 'day panel lists the due task');
   window.closeWindow('calendar');
   await sleep(80);
+
+  /* ---------- today widget ---------- */
+  console.log('--- today widget ---');
+  ok(!!window.OS.widget && !!window.OS.remind, 'OS.widget / OS.remind exposed');
+  const tw = document.getElementById('today-widget');
+  ok(!!tw, 'today widget rendered on desktop');
+  window.OS.widget.refresh();
+  ok(tw.textContent.includes('Cal test task'), 'widget lists upcoming due task');
+  tw.querySelector('[data-open="tasks"]').click();
+  await sleep(140);
+  ok(window.OS.windows.get('tasks') !== undefined, 'widget row launches Tasks');
+  window.closeWindow('tasks');
+  await sleep(80);
+
+  /* ---------- task reminders ---------- */
+  console.log('--- task reminders ---');
+  window.localStorage.setItem('nebula.reminders.v1', '{}');
+  const toasts2 = document.getElementById('toasts');
+  window.OS.remind.run();
+  await sleep(120);
+  ok(window.Audit.read().some((e) => e.event === 'task.reminder'), 'reminder audit-logged');
+  ok(toasts2.textContent.includes('due'), 'due/overdue toast shown');
+  const n1 = toasts2.children.length;
+  window.OS.remind.run();
+  await sleep(120);
+  ok(toasts2.children.length === n1, 'no duplicate reminder same day');
 
   /* ---------- backup (last: restore path reloads after 500ms) ---------- */
   console.log('--- backup ---');

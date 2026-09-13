@@ -23,6 +23,11 @@
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
 
+### 🖥️ Living Desktop Edition (v2.8)
+- **Today widget** — a live desktop card: today's date, tasks due/overdue, this month's budget net, and the next up to 3 due tasks; every row launches the right app, auto-refreshes every 30 s
+- **Task reminders** — when a task hits its due date (or slips past it) you get a toast; each task is reminded at most once per day, and every reminder is audit-logged
+- **Notes → HTML** — one click publishes the current note as a clean, standalone, styled HTML page (markdown rendered, fully offline, safe: everything escaped)
+
 ### 🔗 Connections & Data Edition (v2.7)
 - **Calendar ↔ Tasks** — the calendar now shows due-date dots (blue = due, red = overdue, dim = done); click any day for its task list
 - **Notes markdown** — built-in zero-dependency markdown renderer (headings, bold/italic, inline & fenced code, lists, quotes, hr, links) with an Edit/Preview toggle and Copy-Markdown button
@@ -164,4 +169,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.7.0 — Connections & Data Edition*
+*Made with ♥ in the browser. v2.8.0 — Living Desktop Edition*
