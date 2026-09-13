@@ -216,7 +216,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 2.3.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.4.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -296,6 +296,15 @@
               case 'celebrate':
                 OS.celebrate();
                 print('celebrating — press Esc to stop the show', s.out);
+                break;
+              case 'audit': {
+                const list = Audit.read().slice(0, 12);
+                print(list.length ? list.map((e) => new Date(e.ts).toLocaleTimeString() + '  ' + e.event + (e.detail ? ' — ' + e.detail : '')).join('\n') : '(audit log is empty)', s.out, true);
+                break;
+              }
+              case 'tv':
+                OS.tv.toggle();
+                print('TV mode ' + (document.body.classList.contains('tv-on') ? 'on' : 'off'), s.out);
                 break;
               case 'open': {
                 const id = arg.split(' ')[0];
@@ -523,7 +532,7 @@
               } catch (e) {}
             }
             render();
-            if (last) notify('📂', t('fs.imported'), last);
+            if (last) { Audit.log('file.import', last); notify('📂', t('fs.imported'), last); }
           });
           root.querySelector('[data-act="export"]').addEventListener('click', () => {
             if (!selected) { notify('⚠️', 'Nothing selected', 'Click an item first.'); return; }
@@ -536,6 +545,7 @@
             document.body.appendChild(a);
             a.click();
             a.remove();
+            Audit.log('file.export', node.name);
             notify('⬇️', t('fs.exported'), node.name);
           });
           root.querySelector('[data-act="del"]').addEventListener('click', () => {
@@ -1248,7 +1258,7 @@
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.pin')) + '</div><div class="sub">' + esc(t('set.pinSub')) + '</div></div>' +
                   '<div class="seg">' +
                     '<button data-pin="set">' + esc(t('set.pinSet')) + '</button>' +
-                    (s.pin ? '<button data-pin="clear">' + esc(t('set.pinClear')) + '</button>' : '') +
+                    (s.pinHash ? '<button data-pin="clear">' + esc(t('set.pinClear')) + '</button>' : '') +
                   '</div></div>' +
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.idle')) + '</div><div class="sub">' + esc(t('set.idleSub')) + '</div></div>' +
                   '<div style="display:flex;gap:8px;align-items:center">' +
@@ -1257,6 +1267,8 @@
                     '</select>' +
                     '<input type="checkbox" class="check" data-key="idleLock">' +
                   '</div></div>' +
+                '<div class="set-row"><div><div class="lbl">' + esc(t('set.erase')) + '</div><div class="sub">' + esc(t('set.eraseMsg')) + '</div></div>' +
+                  '<button class="btn ghost sm" data-erase>' + esc(t('set.erase')) + '</button></div>' +
               '</div>' +
               '<div class="set-sec"><h3>' + esc(t('set.system')) + '</h3>' +
                 '<div class="set-row"><div class="lbl">' + esc(t('set.storage')) + '</div><div class="set-storage" data-storage></div></div>' +
@@ -1294,17 +1306,25 @@
                   ask({ title: t('set.pin'), message: t('set.pinSub'), placeholder: '1234', value: '', okLabel: t('set.pinSet') })
                     .then((v) => {
                       if (v && /^\d{4}$/.test(v)) {
-                        s.pin = v; OS.saveSettings();
+                        OS.setPin(v);
                         notify('🔒', 'PIN set', t('set.pin'));
                       } else notify('⚠️', 'Invalid PIN', 'PIN must be exactly 4 digits.');
                       rebuild();
                     });
                 } else {
                   confirmDialog(t('set.pinClear'), t('set.pinSub'), t('set.pinClear')).then((ok) => {
-                    if (ok) { s.pin = ''; OS.saveSettings(); notify('🔓', 'PIN cleared'); }
+                    if (ok) { OS.clearPin(); notify('🔓', 'PIN cleared'); }
                     rebuild();
                   });
                 }
+              });
+            });
+            box.querySelector('[data-erase]').addEventListener('click', () => {
+              confirmDialog(t('set.erase'), t('set.eraseMsg'), t('set.erase')).then((ok2) => {
+                if (!ok2) return;
+                Audit.log('data.erase', 'all local data wiped by user');
+                Object.keys(localStorage).filter((k) => k.indexOf('nebula.') === 0).forEach((k) => localStorage.removeItem(k));
+                setTimeout(() => location.reload(), 200);
               });
             });
             box.querySelector('[data-reset]').addEventListener('click', () => {
@@ -1371,6 +1391,8 @@
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
+              '<div><span>Compliance</span><b>WCAG 2.1 AA · Section 508 · <a href="docs/a11y.html" target="_blank" rel="noopener">Accessibility &amp; security statement ↗</a></b></div>' +
+              '<div><span>Audit</span><b>immutable local event log · PIN (salted SHA-256) · auto-lock</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
               '<div><span>Shortcuts</span><b>⌘Space · ⌘` · Alt+Tab · Alt+L</b></div>' +
               '<div><span>Filesystem</span><b>virtual, localStorage-backed</b></div>' +
@@ -1385,6 +1407,98 @@
           const up = root.querySelector('.about-up');
           const iv = setInterval(() => { up.textContent = uptimeMin() + ' min'; }, 30000);
           win.onClose = () => clearInterval(iv);
+        }
+      });
+    }
+  });
+
+  /* ---------- audit log (governance) ---------- */
+  registerApp({
+    id: 'audit',
+    title: 'Audit Log',
+    titleKey: 'app.audit',
+    icon: '📜',
+    tile: 'linear-gradient(135deg,#0f172a,#334155)',
+    open() {
+      createWindow({
+        id: 'audit',
+        appId: 'audit',
+        title: t('app.audit'),
+        width: 760,
+        height: 480,
+        content(winW) {
+          const box = $el('div', 'audit');
+          const render = () => {
+            const list = Audit.read();
+            box.innerHTML =
+              '<div class="audit-bar"><b class="audit-count">' + list.length + '</b>' +
+                '<button class="btn ghost sm" data-export>' + esc(t('audit.export')) + '</button>' +
+                '<button class="btn ghost sm" data-clear>' + esc(t('audit.clear')) + '</button></div>' +
+              '<div class="audit-list">' + (list.length ? list.map((e) =>
+                '<div class="audit-row"><span class="audit-ts">' + new Date(e.ts).toLocaleString() + '</span>' +
+                '<span class="audit-ev">' + esc(e.event) + '</span>' +
+                '<span class="audit-dt">' + esc(e.detail) + '</span></div>').join('')
+                : '<div class="audit-empty">' + esc(t('audit.empty')) + '</div>') + '</div>';
+            box.querySelector('[data-export]').addEventListener('click', () => {
+              const blob = new Blob([JSON.stringify(Audit.read(), null, 2)], { type: 'application/json' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'nebula-audit-log.json';
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+              Audit.log('audit.export');
+              render();
+            });
+            box.querySelector('[data-clear]').addEventListener('click', () => {
+              confirmDialog(t('audit.clear'), t('audit.clearMsg'), t('audit.clear')).then((ok2) => {
+                if (ok2) { Audit.clear(); render(); }
+              });
+            });
+          };
+          render();
+          winW.body.appendChild(box);
+        }
+      });
+    }
+  });
+
+  /* ---------- TV (living room) ---------- */
+  registerApp({
+    id: 'tv',
+    title: 'TV',
+    titleKey: 'app.tv',
+    icon: '📺',
+    tile: 'linear-gradient(135deg,#111827,#3b82f6)',
+    open() {
+      createWindow({
+        id: 'tv',
+        appId: 'tv',
+        title: t('app.tv'),
+        width: 880,
+        height: 560,
+        content(winW) {
+          const box = $el('div', 'tv-app');
+          box.innerHTML =
+            '<div class="tv-app-hero">' +
+              '<div class="tv-app-eyebrow">NEBULA · LIVING ROOM</div>' +
+              '<h2>📺 ' + esc(t('app.tv')) + '</h2>' +
+              '<p>' + esc(t('tv.appSub')) + '</p>' +
+              '<button class="btn" data-tvmode>' + esc(t('tv.mode')) + '</button>' +
+            '</div>' +
+            '<div class="tv-app-grid">' + window.TV_STREAMS.map((st) =>
+              '<button class="tv-app-tile" data-s="' + st.id + '" style="--tc:' + st.color + '">' +
+                '<span class="tv-app-glyph" style="background:' + st.color + '">' + esc(st.glyph) + '</span>' +
+                '<span class="tv-app-name">' + esc(st.name) + '</span>' +
+              '</button>').join('') + '</div>' +
+            '<p class="tv-app-note">' + esc(t('tv.physics')) + '</p>';
+          box.querySelector('[data-tvmode]').addEventListener('click', () => OS.tv.open());
+          box.querySelectorAll('[data-s]').forEach((b) => {
+            b.addEventListener('click', () => {
+              const st = window.TV_STREAMS.find((x) => x.id === b.dataset.s);
+              if (st) OS.tv.launch(st);
+            });
+          });
+          winW.body.appendChild(box);
         }
       });
     }

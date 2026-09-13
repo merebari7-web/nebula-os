@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nebula OS — Accessibility &amp; Security Statement</title>
+<meta name="description" content="Accessibility conformance (WCAG 2.1 AA / Section 508) and security design statement for Nebula OS.">
+<style>
+  :root{ --ink:#111827; --muted:#4b5563; --line:#e5e7eb; --bg:#f9fafb; --accent:#0a84ff; --navy:#0b1220; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--ink); background:var(--bg); line-height:1.65; font-size:16px; }
+  header{ background:var(--navy); color:#fff; padding:40px 24px 34px; }
+  header .wrap{ max-width:860px; margin:0 auto; }
+  h1{ margin:0 0 10px; font-size:30px; letter-spacing:-.01em; }
+  header p{ margin:0; color:#c3ccdd; max-width:640px; }
+  main{ max-width:860px; margin:0 auto; padding:34px 24px 60px; }
+  h2{ font-size:21px; margin:38px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  h2:first-child{ margin-top:0; }
+  p{ margin:10px 0; color:var(--ink); }
+  ul{ margin:10px 0; padding-left:22px; }
+  li{ margin:6px 0; }
+  .tag{ display:inline-block; background:var(--navy); color:#fff; font-size:12px; font-weight:600;
+    letter-spacing:.06em; padding:3px 10px; border-radius:999px; margin-bottom:14px; }
+  .limit{ background:#fff; border:1px solid var(--line); border-left:4px solid #f59e0b; border-radius:8px;
+    padding:14px 18px; margin:12px 0; }
+  .limit strong{ display:block; margin-bottom:4px; }
+  code{ font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em; background:#eef1f6;
+    padding:1px 6px; border-radius:5px; }
+  table{ border-collapse:collapse; width:100%; margin:14px 0; font-size:14.5px; }
+  th, td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ background:#fff; }
+  .pass{ color:#047857; font-weight:600; }
+  .partial{ color:#b45309; font-weight:600; }
+  footer{ border-top:1px solid var(--line); padding:22px 24px 40px; color:var(--muted); font-size:14px; }
+  footer .wrap{ max-width:860px; margin:0 auto; }
+  a{ color:var(--accent); }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; animation:none !important; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="tag">GOVERNMENT DEPLOYMENT DOCUMENT</div>
+    <h1>Nebula OS — Accessibility &amp; Security Statement</h1>
+    <p>Conformance, design decisions and known limitations for the Nebula OS web operating system.
+    Reviewed against WCAG 2.1 Level AA, the current standard referenced by Section 508 of the Rehabilitation Act,
+    and common federal web-hosting security baselines.</p>
+  </div>
+</header>
+<main>
+  <h2>1. Accessibility conformance</h2>
+  <p>Nebula OS is a single-page desktop environment. The table below summarizes the accessibility
+  implementation shipped in the current release.</p>
+  <table>
+    <tr><th>Requirement (WCAG 2.1 AA)</th><th>Status</th><th>Implementation</th></tr>
+    <tr>
+      <td>1.4.3 Contrast (minimum)</td>
+      <td class="pass">Implemented</td>
+      <td>Body, muted, danger and gold-on-navy text pairs verified at ≥ 4.5:1. Button text color is
+      <em>computed at runtime</em> against the user's accent color and set to the option with the higher
+      contrast ratio (<code>--btn-ink</code>), so custom accent choices cannot drop text below standard.</td>
+    </tr>
+    <tr>
+      <td>1.4.11 Non-text contrast</td>
+      <td class="pass">Implemented</td>
+      <td>Focus indicators use a 2 px accent outline (3 px in TV Mode); window chrome, traffic lights and
+      dock states use strokes above the 3:1 recommendation.</td>
+    </tr>
+    <tr>
+      <td>2.1.1 Keyboard</td>
+      <td class="pass">Implemented</td>
+      <td>Complete keyboard operation: arrow keys move a focused window, <b>Shift</b>+arrows resize it;
+      menubar menus navigate with arrow keys (Down/Up between items, Left/Right between menus, Enter to run,
+      Esc to close); desktop icons, dock, start menu, calculator, files and lock screen are all keyboard
+      reachable. TV Mode is fully remote-operable with arrow keys, Enter and Esc.</td>
+    </tr>
+    <tr>
+      <td>4.1.2 Name, role, value</td>
+      <td class="pass">Implemented</td>
+      <td>Menubar menus expose <code>role=menu</code>/<code>menuitem</code>, dialogs expose
+      <code>role=dialog aria-modal</code>, notifications render into a <code>role=status</code> live region,
+      and a second polite live region announces OS events (window opened/closed, screen locked) to screen
+      readers. Icon-only buttons carry <code>aria-label</code>s.</td>
+    </tr>
+    <tr>
+      <td>2.3.3 Animation from interactions</td>
+      <td class="pass">Implemented</td>
+      <td>Settings → Behavior → “Reduce Motion” (and the in-OS setting) collapses all animation and
+      transition durations to a single frame and disables the fireworks show, which reports why it is
+      disabled. A native <code>prefers-reduced-motion</code> fallback is applied on this page.</td>
+    </tr>
+    <tr>
+      <td>3.1 Language of page</td>
+      <td class="pass">Implemented</td>
+      <td><code>&lt;html lang&gt;</code> is kept in sync with the selected UI language (8 languages,
+      including full RTL for Arabic).</td>
+    </tr>
+    <tr>
+      <td>Pointer-dependent interactions (mouse-only drag/resize)</td>
+      <td class="partial">Partially addressed</td>
+      <td>Dragging and edge-resizing remain pointer gestures (standard for desktop environments), but every
+      window can be moved and resized from its title bar with the keyboard, so no functionality depends on a
+      mouse.</td>
+    </tr>
+  </table>
+
+  <h2>2. Security design</h2>
+  <ul>
+    <li><b>Content Security Policy.</b> A strict CSP is delivered on every page: <code>script-src 'self'</code>
+    (no inline or remote script, no eval — the shell math engine is a dedicated parser, not <code>eval</code>),
+    no plugins (<code>object-src 'none'</code>), locked <code>base-uri</code> and <code>form-action</code>.
+    Frame embedding is restricted to <code>https:</code> and is used only by the documented web-bridge
+    (TV/streaming and Android) features; the OS itself loads no third-party scripts.</li>
+    <li><b>Session PIN.</b> The lock-screen PIN is never stored in cleartext. It is stored as a
+    <b>salted SHA-256 digest</b> (unique 16-hex-digit salt per PIN); legacy cleartext values are transparently
+    migrated and discarded at boot.</li>
+    <li><b>Audit trail.</b> A local, capped (500-entry) audit log records boot, app open/close, lock/unlock,
+    PIN changes, theme/wallpaper changes, file import/export, Android installs/uninstalls, TV launches and
+    data wipes. It is viewable in the Audit Log app, exportable as JSON, and clearable only after explicit
+    confirmation.</li>
+    <li><b>Auto-lock.</b> The screen locks after configurable idle time (default 5 minutes), configurable or
+    disabled in Settings → Security.</li>
+    <li><b>Data locality.</b> All user data (files, settings, PIN hash, audit log) lives in this browser's
+    local storage. Nothing is transmitted to a server. The only outbound connections are: the Google Fonts
+    stylesheet, and the documented live-data APIs (CoinGecko for the Stocks app, Photon for Maps geocoding,
+    YouTube oEmbed), each listed in the CSP <code>connect-src</code>.</li>
+    <li><b>Input handling.</b> All dynamic content is HTML-escaped before insertion; user-supplied file names,
+    notes and terminal output never execute as code. Terminal “math” and assistant arithmetic use a bounded
+    expression parser that cannot access functions, objects or the environment.</li>
+  </ul>
+
+  <h2>3. Known limitations (stated plainly)</h2>
+  <div class="limit"><strong>Third-party embedded content.</strong> When a TV or Android web-bridge embeds an
+  external site, that site's own accessibility and security posture is outside Nebula OS's control.
+  Embedding is always optional — the same content can be opened in its own tab.</div>
+  <div class="limit"><strong>Browser trust model.</strong> Nebula OS runs inside a browser tab and inherits the
+  browser's sandbox. It does not provide full-disk encryption, hardware key authentication, or CAC/PIV card
+  support. It is not a substitute for an approved endpoint security product.</div>
+  <div class="limit"><strong>Mobile browsers.</strong> TV Mode and the full desktop work best on desktop and
+  tablet form factors. Mobile is supported (safe-area aware layout, touch targets ≥ 44 px) but some power
+  features (window dragging) are pointer-centric.</div>
+  <div class="limit"><strong>No biometric integration.</strong> Authentication is PIN-only. WebAuthn/passkey
+  integration is not part of the current release.</div>
+
+  <h2>4. Feedback</h2>
+  <p>Report accessibility or security findings through the project's issue tracker at
+  <a href="https://github.com/merebari7-web/nebula-os">github.com/merebari7-web/nebula-os</a>.
+  Reports that include steps to reproduce (keyboard path or AT configuration) are triaged first.</p>
+</main>
+<footer>
+  <div class="wrap">Nebula OS v2.4.0 — Government &amp; TV Edition · Vanilla JS, zero dependencies ·
+  This page is self-contained and works offline.</div>
+</footer>
+</body>
+</html>

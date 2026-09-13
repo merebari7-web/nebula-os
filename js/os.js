@@ -45,9 +45,46 @@
     reduceMotion: false,
     language: 'en',
     pin: '',
+    pinHash: '',
+    pinSalt: '',
     idleLock: true,
     idleMinutes: 5
   };
+
+  /* ---------- PIN security (salted SHA-256, never stored in cleartext) ---------- */
+  function pinCheck(input) {
+    const s = OS.settings;
+    if (!s.pinHash) return false;
+    return sha256Hex(s.pinSalt + ':' + String(input)) === s.pinHash;
+  }
+  function pinSet(v) {
+    const s = OS.settings;
+    const salt = sha256Hex(String(Date.now()) + Math.random()).slice(0, 16);
+    s.pinSalt = salt;
+    s.pinHash = sha256Hex(salt + ':' + v);
+    s.pin = '';
+    OS.saveSettings();
+    Audit.log('security.pin.set', '4-digit PIN (salted SHA-256)');
+    announce(t('lock.pinSetDone'));
+  }
+  function pinClear() {
+    const s = OS.settings;
+    s.pin = ''; s.pinHash = ''; s.pinSalt = '';
+    OS.saveSettings();
+    Audit.log('security.pin.clear');
+    announce(t('lock.pinCleared'));
+  }
+  function migratePin() {
+    const s = OS.settings;
+    if (s.pin && !s.pinHash) {
+      const salt = sha256Hex(String(Date.now()) + Math.random()).slice(0, 16);
+      s.pinSalt = salt;
+      s.pinHash = sha256Hex(salt + ':' + s.pin);
+      s.pin = '';
+      OS.saveSettings();
+      Audit.log('security.pin.migrated', 'cleartext PIN converted to salted hash');
+    }
+  }
 
   const WALLPAPERS = [
     { name: 'Sonoma', css: 'radial-gradient(1300px 900px at 82% -10%, rgba(255,158,131,.5) 0%, rgba(255,158,131,0) 58%), radial-gradient(1100px 800px at 8% 112%, rgba(124,108,255,.45) 0%, rgba(124,108,255,0) 55%), radial-gradient(900px 700px at 32% 18%, rgba(255,196,140,.25) 0%, rgba(255,196,140,0) 50%), linear-gradient(155deg, #1c1233 0%, #45306b 40%, #8a4a6b 68%, #d97b5f 88%, #f2a97e 100%)' },
@@ -144,10 +181,256 @@
     return fw;
   }
 
+  /* ---------- TV mode — 10-foot UI + living-room catalog ---------- */
+  const TV_STREAMS = [
+    { id: 'youtube', name: 'YouTube', glyph: '▶', color: '#ff0033', native: 'youtube' },
+    { id: 'netflix', name: 'Netflix', glyph: 'N', color: '#e50914', url: 'https://www.netflix.com' },
+    { id: 'prime', name: 'Prime Video', glyph: 'P', color: '#1399ff', url: 'https://www.primevideo.com' },
+    { id: 'disney', name: 'Disney+', glyph: 'D', color: '#113ccf', url: 'https://www.disneyplus.com' },
+    { id: 'max', name: 'Max', glyph: 'M', color: '#4d1d95', url: 'https://www.max.com' },
+    { id: 'apple', name: 'Apple TV+', glyph: 'A', color: '#1d1d1f', url: 'https://tv.apple.com' },
+    { id: 'paramount', name: 'Paramount+', glyph: 'P', color: '#0064ff', url: 'https://www.paramountplus.com' },
+    { id: 'peacock', name: 'Peacock', glyph: 'P', color: '#ff5e21', url: 'https://www.peacocktv.com' },
+    { id: 'dazn', name: 'DAZN', glyph: 'Z', color: '#0a7a43', url: 'https://www.dazn.com' },
+    { id: 'espn', name: 'ESPN', glyph: 'E', color: '#cc0000', url: 'https://www.espn.com' },
+    { id: 'bbciplayer', name: 'BBC iPlayer', glyph: 'B', color: '#b80000', url: 'https://www.bbc.co.uk/iplayer' },
+    { id: 'crunchyroll', name: 'Crunchyroll', glyph: 'C', color: '#f47521', url: 'https://www.crunchyroll.com' },
+    { id: 'tubi', name: 'Tubi', glyph: 'T', color: '#d9a404', url: 'https://tubi.tv' },
+    { id: 'pluto', name: 'Pluto TV', glyph: 'P', color: '#1a4fff', url: 'https://pluto.tv' },
+    { id: 'plex', name: 'Plex', glyph: 'P', color: '#c78a1a', url: 'https://watch.plex.tv' },
+    { id: 'twitch', name: 'Twitch', glyph: 'T', color: '#9146ff', url: 'https://www.twitch.tv' },
+    { id: 'tiktok', name: 'TikTok', glyph: 'T', color: '#010101', url: 'https://www.tiktok.com' },
+    { id: 'sling', name: 'Sling TV', glyph: 'S', color: '#e45c10', url: 'https://www.slingtv.com' },
+    { id: 'vudu', name: 'Vudu', glyph: 'V', color: '#e51937', url: 'https://www.vudu.com' },
+    { id: 'browser', name: 'Web Browser', glyph: '🌐', color: '#3478f6', app: 'browser' }
+  ];
+  let tvState = null;
+  function tvSession(st) {
+    const key = 'tv-' + st.id;
+    const existing = OS.windows.get(key);
+    if (existing) { focusWindow(existing); return; }
+    Audit.log('tv.session', st.name);
+    createWindow({
+      id: key, appId: 'tv', title: st.name,
+      x: 0, y: MENU_H + 2,
+      width: innerWidth, height: innerHeight - MENU_H - TASKBAR_H - 4,
+      content(winW) {
+        winW.body.innerHTML =
+          '<div class="tv-session">' +
+            '<div class="tv-s-glyph" style="background:' + st.color + '">' + escapeHtml(st.glyph) + '</div>' +
+            '<h3>' + escapeHtml(st.name) + '</h3>' +
+            '<p class="tv-s-note">' + escapeHtml(t('tv.noEmbed')) + '</p>' +
+            '<button class="btn tv-s-open">' + escapeHtml(t('tv.open')) + ' ↗</button>' +
+          '</div>';
+        winW.body.querySelector('.tv-s-open').addEventListener('click', () => {
+          Audit.log('tv.launch', st.name);
+          window.open(st.url, '_blank', 'noopener');
+        });
+      }
+    });
+  }
+  function tvLaunchStream(st) {
+    if (st.native) { openApp(st.native); return; }
+    if (st.app) { openApp(st.app); return; }
+    tvSession(st);
+  }
+  function tickTvClock() {
+    const c = byId('tv-clock');
+    if (c) c.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  function tvLayout() {
+    const grid = byId('tv-grid');
+    const first = grid && grid.querySelector('.tv-tile');
+    if (!grid || !first) return;
+    const tw = first.getBoundingClientRect().width + 16;
+    tvState.cols = Math.max(1, Math.round(grid.getBoundingClientRect().width / tw));
+  }
+  function tvFocus(i) {
+    if (!tvState) return;
+    tvState.idx = i;
+    const tiles = byId('tv-grid').querySelectorAll('.tv-tile');
+    tiles.forEach((b, j) => b.classList.toggle('focused', j === i));
+    if (tiles[i]) { tiles[i].focus(); try { tiles[i].scrollIntoView({ block: 'nearest', inline: 'nearest' }); } catch (e) {} }
+    Sound.pop();
+  }
+  function tvMove(dx, dy) {
+    if (!tvState) return;
+    const n = tvState.tiles.length, c = Math.max(1, tvState.cols), i = tvState.idx;
+    let ni = i;
+    if (dx === 1) ni = (i + 1) % n;
+    else if (dx === -1) ni = (i - 1 + n) % n;
+    else if (dy === 1) ni = (i + c) % n;
+    else ni = (i - c + n) % n;
+    tvFocus(ni);
+  }
+  function tvOpen() {
+    if (tvState) return;
+    const home = byId('tv-home');
+    if (!home) return;
+    const tiles = [];
+    Object.values(APPS).forEach((a) => tiles.push({
+      key: a.id, label: appTitle(a), glyph: a.icon || '🪐', color: '#5b6cff', run: () => openApp(a.id)
+    }));
+    TV_STREAMS.forEach((st) => tiles.push({ key: 's:' + st.id, label: st.name, glyph: st.glyph, color: st.color, run: () => tvLaunchStream(st) }));
+    home.innerHTML =
+      '<div class="tv-status"><span class="tv-brand">NEBULA · TV MODE</span><span class="tv-clock" id="tv-clock"></span></div>' +
+      '<div class="tv-grid" id="tv-grid">' + tiles.map((tl, i) =>
+        '<button class="tv-tile' + (i === 0 ? ' focused' : '') + '" data-i="' + i + '" style="--tc:' + tl.color + '" aria-label="' + escapeHtml(tl.label) + '">' +
+          '<span class="tv-t-glyph" style="background:' + tl.color + '">' + escapeHtml(tl.glyph) + '</span>' +
+          '<span class="tv-t-name">' + escapeHtml(tl.label) + '</span>' +
+        '</button>').join('') + '</div>' +
+      '<div class="tv-hint">' + escapeHtml(t('tv.hint')) + '</div>';
+    home.classList.remove('hidden');
+    document.body.classList.add('tv-on');
+    tvState = { tiles, idx: 0, cols: 6, iv: setInterval(tickTvClock, 10000) };
+    tickTvClock();
+    tvLayout();
+    tvFocus(0);
+    Audit.log('tv.mode.on');
+  }
+  function tvClose() {
+    if (!tvState) return;
+    clearInterval(tvState.iv);
+    byId('tv-home').classList.add('hidden');
+    document.body.classList.remove('tv-on');
+    tvState = null;
+    Audit.log('tv.mode.off');
+  }
+  function tvToggle() { if (tvState) tvClose(); else tvOpen(); }
+  function tvKeyHandler(e) {
+    if (!tvState) return;
+    const k = e.key;
+    if (k === 'Escape') { e.preventDefault(); e.stopPropagation(); tvClose(); return; }
+    if (k === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); tvMove(1, 0); }
+    else if (k === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); tvMove(-1, 0); }
+    else if (k === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); tvMove(0, 1); }
+    else if (k === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); tvMove(0, -1); }
+    else if (k === 'Enter' || k === ' ') {
+      e.preventDefault(); e.stopPropagation();
+      const tl = tvState.tiles[tvState.idx];
+      tvClose();
+      if (tl) tl.run();
+    }
+  }
+
+  /* ---------- SHA-256 (pure JS, no deps — for PIN hashing) ---------- */
+  function sha256Hex(ascii) {
+    function rr(v, a) { return (v >>> a) | (v << (32 - a)); }
+    const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+      0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+      0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+      0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+      0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+      0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+      0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+      0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    let H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+    const bytes = [];
+    for (let i = 0; i < ascii.length; i++) bytes.push(ascii.charCodeAt(i) & 255); // ASCII (PINs, salts, hex)
+    const bitLen = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    for (let i = 7; i >= 0; i--) bytes.push((bitLen / Math.pow(2, i * 8)) & 255);
+    const w = new Array(64);
+    for (let off = 0; off < bytes.length; off += 64) {
+      for (let i = 0; i < 16; i++) w[i] = (bytes[off + i * 4] << 24) | (bytes[off + i * 4 + 1] << 16) | (bytes[off + i * 4 + 2] << 8) | bytes[off + i * 4 + 3];
+      for (let i = 16; i < 64; i++) {
+        const s0 = rr(w[i - 15], 7) ^ rr(w[i - 15], 18) ^ (w[i - 15] >>> 3);
+        const s1 = rr(w[i - 2], 17) ^ rr(w[i - 2], 19) ^ (w[i - 2] >>> 10);
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let i = 0; i < 64; i++) {
+        const S1 = rr(e, 6) ^ rr(e, 11) ^ rr(e, 25);
+        const ch = (e & f) ^ (~e & g);
+        const t1 = (h + S1 + ch + K[i] + w[i]) | 0;
+        const S0 = rr(a, 2) ^ rr(a, 13) ^ rr(a, 22);
+        const maj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + maj) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H = [(H[0] + a) | 0, (H[1] + b) | 0, (H[2] + c) | 0, (H[3] + d) | 0,
+           (H[4] + e) | 0, (H[5] + f) | 0, (H[6] + g) | 0, (H[7] + h) | 0];
+    }
+    return H.map((x) => ('00000000' + ((x >>> 0).toString(16))).slice(-8)).join('');
+  }
+
+  /* ---------- safe math parser (replaces eval; CSP-friendly) ---------- */
+  function safeMath(src) {
+    const s2 = String(src).replace(/[\s ]/g, '');
+    let i = 0;
+    function fail() { throw new Error('bad math'); }
+    function parseExpr() {
+      let v = parseTerm();
+      while (s2[i] === '+' || s2[i] === '-') { const op = s2[i++]; const r = parseTerm(); v = op === '+' ? v + r : v - r; }
+      return v;
+    }
+    function parseTerm() {
+      let v = parseFactor();
+      while (s2[i] === '*' || s2[i] === '/' || s2[i] === '%') {
+        const op = s2[i++]; const r = parseFactor();
+        if (op === '*') v *= r; else if (op === '/') v /= r; else v %= r;
+      }
+      return v;
+    }
+    function parseFactor() {
+      if (s2[i] === '-') { i++; return -parseFactor(); }
+      if (s2[i] === '+') { i++; return parseFactor(); }
+      return parseAtom();
+    }
+    function parseAtom() {
+      if (s2[i] === '(') {
+        i++; const v = parseExpr();
+        if (s2[i] !== ')') fail();
+        i++; return v;
+      }
+      const m = /^(\d+\.?\d*|\.\d+)/.exec(s2.slice(i));
+      if (!m) fail();
+      i += m[0].length;
+      return parseFloat(m[0]);
+    }
+    if (!s2) fail();
+    const v = parseExpr();
+    if (i < s2.length) fail();
+    return v;
+  }
+
+  /* ---------- audit trail (governance) ---------- */
+  const Audit = {
+    KEY: 'nebula.audit.v1',
+    cap: 500,
+    read() { try { const l = JSON.parse(localStorage.getItem(this.KEY)); return Array.isArray(l) ? l : []; } catch (e) { return []; } },
+    log(event, detail) {
+      const list = this.read();
+      list.unshift({ ts: Date.now(), event: String(event), detail: String(detail == null ? '' : detail) });
+      if (list.length > this.cap) list.length = this.cap;
+      try { localStorage.setItem(this.KEY, JSON.stringify(list)); } catch (e) {}
+    },
+    clear() { try { localStorage.removeItem(this.KEY); } catch (e) {} }
+  };
+
+  /* ---------- network status ---------- */
+  function netStatus(on) {
+    const w = byId('tray-wifi');
+    if (!w) return;
+    w.classList.toggle('off', !on);
+    w.title = on ? 'Connected — nebula-net' : 'Offline — data stays on this device';
+  }
+
+  /* ---------- screen-reader announcements ---------- */
+  let annTimer = 0;
+  function announce(msg) {
+    const a = byId('os-announcer');
+    if (!a) return;
+    a.textContent = '';
+    clearTimeout(annTimer);
+    annTimer = setTimeout(() => { a.textContent = msg; }, 40);
+  }
+
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.3.0',
+    version: '2.4.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -193,11 +476,22 @@
   }
 
   OS.celebrate = celebrate;
+  OS.setPin = pinSet;
+  OS.clearPin = pinClear;
+  OS.tv = { open: tvOpen, close: tvClose, toggle: tvToggle, launch: tvLaunchStream };
 
   OS.applySettings = function () {
     document.body.dataset.theme = OS.settings.theme;
     document.body.dataset.motion = OS.settings.reduceMotion ? 'reduce' : 'full';
     document.documentElement.style.setProperty('--accent', OS.settings.accent);
+    /* pick button ink with the best contrast against the user's accent (a11y) */
+    try {
+      const hx = String(OS.settings.accent).replace('#', '');
+      const f = (i) => { const v = parseInt(hx.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+      const L = 0.2126 * f(0) + 0.7152 * f(2) + 0.0722 * f(4);
+      const cw = 1.05 / (L + 0.05), cd = (L + 0.05) / 0.057;
+      document.documentElement.style.setProperty('--btn-ink', cw > cd ? '#ffffff' : '#10131a');
+    } catch (e) {}
     const vol = byId('tray-vol');
     if (vol) vol.style.opacity = OS.settings.sound ? '1' : '.35';
     const brand = byId('boot-brand-svg');
@@ -244,8 +538,13 @@
   const APPS = {};
   function registerApp(app) { APPS[app.id] = app; }
   function openApp(id, args) {
+    Audit.log('app.open', id);
     const a = APPS[id];
     if (!a) { notify('⚠️', 'Unknown app', 'No app registered as "' + id + '".'); return; }
+    if (!OS.windows.has(id)) {
+      const app = a;
+      setTimeout(() => announce(appTitle(app) + ' ' + t('a11y.opened')), 60);
+    }
     a.open(args);
   }
   function appTitle(a) { return (a.titleKey && t(a.titleKey)) || a.title || a.id; }
@@ -325,11 +624,14 @@
   }
 
   function closeWindow(id) {
+    Audit.log('app.close', id);
     const win = OS.windows.get(id);
     if (!win) return;
     if (win.onClose) { try { win.onClose(win); } catch (e) {} }
     Sound.close();
     saveWinRect(win);
+    const closedApp = win.appId && APPS[win.appId];
+    if (closedApp) announce(appTitle(closedApp) + ' ' + t('a11y.closed'));
     win.el.classList.add('closing');
     OS.windows.delete(id);
     if (focusedWin === win) {
@@ -444,6 +746,34 @@
 
   function makeDraggable(win) {
     const bar = win.el.querySelector('.titlebar');
+    bar.setAttribute('tabindex', '0');
+    bar.setAttribute('aria-label', t('a11y.titlebar'));
+    bar.addEventListener('keydown', (e) => {
+      if (win.maximized) return;
+      const step = 24;
+      const r = win.el.getBoundingClientRect();
+      let handled = true;
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        if (e.shiftKey) {
+          let w = r.width, h = r.height;
+          if (e.key === 'ArrowRight') w += step; else if (e.key === 'ArrowLeft') w -= step;
+          if (e.key === 'ArrowDown') h += step; else h -= step;
+          w = Math.max(280, Math.min(w, innerWidth - 8));
+          h = Math.max(180, Math.min(h, innerHeight - MENU_H - 8));
+          win.el.style.width = w + 'px';
+          win.el.style.height = h + 'px';
+        } else {
+          let x = r.left, y = r.top;
+          if (e.key === 'ArrowRight') x += step; else if (e.key === 'ArrowLeft') x -= step;
+          if (e.key === 'ArrowDown') y += step; else y -= step;
+          x = Math.max(-r.width + 110, Math.min(x, innerWidth - 90));
+          y = Math.max(MENU_H, Math.min(y, innerHeight - TASKBAR_H - 30));
+          win.el.style.left = x + 'px';
+          win.el.style.top = y + 'px';
+        }
+      } else handled = false;
+      if (handled) { e.preventDefault(); e.stopPropagation(); }
+    });
     bar.addEventListener('pointerdown', (e) => {
       if (e.button !== 0 || e.target.closest('.wc')) return;
       if (win.maximized) return;
@@ -697,7 +1027,7 @@
     pinBuf += digit;
     renderDots();
     if (pinBuf.length === 4) {
-      if (pinBuf === String(OS.settings.pin)) {
+      if (pinCheck(pinBuf)) {
         pinBuf = '';
         renderDots();
         unlockScreen();
@@ -720,7 +1050,7 @@
     if (isLocked()) return;
     byId('lock-bg').style.background = WALLPAPERS[OS.settings.wallpaper].css;
     updateLockTime();
-    const hasPin = !!OS.settings.pin;
+    const hasPin = !!OS.settings.pinHash;
     byId('lock-pin-wrap').classList.toggle('hidden', !hasPin);
     byId('lock-reset').classList.toggle('hidden', !hasPin);
     byId('lock-hint').classList.toggle('hidden', hasPin);
@@ -729,15 +1059,19 @@
     renderDots();
     byId('lock-screen').classList.remove('hidden');
     document.body.classList.add('locked');
+    tvClose();
     hideMenu();
     byId('start-menu') && byId('start-menu').classList.remove('open');
     Sound.pop();
+    Audit.log('security.lock');
+    announce(t('lock.announced'));
   }
   function unlockScreen() {
     byId('lock-screen').classList.add('hidden');
     document.body.classList.remove('locked');
     lastActivity = Date.now();
     Sound.open();
+    Audit.log('security.unlock');
   }
 
   function buildLock() {
@@ -757,8 +1091,7 @@
       e.stopPropagation();
       confirmDialog(t('lock.reset'), t('lock.resetMsg'), t('lock.resetBtn')).then((ok) => {
         if (ok) {
-          OS.settings.pin = '';
-          OS.saveSettings();
+          OS.clearPin();
           byId('lock-pin-wrap').classList.add('hidden');
           byId('lock-reset').classList.add('hidden');
           byId('lock-hint').classList.remove('hidden');
@@ -768,13 +1101,13 @@
     });
     byId('lock-screen').addEventListener('pointerdown', (e) => {
       if (e.target.closest('.lock-key') || e.target.closest('.lock-reset') || e.target.closest('.modal-overlay')) return;
-      if (!OS.settings.pin) unlockScreen();
+      if (!OS.settings.pinHash) unlockScreen();
     });
 
     document.addEventListener('keydown', (e) => {
       if (!isLocked()) return;
       if (e.target && e.target.closest && e.target.closest('.modal-overlay')) return;
-      if (OS.settings.pin) {
+      if (OS.settings.pinHash) {
         if (/^[0-9]$/.test(e.key)) { e.preventDefault(); pinAppend(e.key); Sound.pop(); }
         else if (e.key === 'Backspace') { e.preventDefault(); pinBuf = pinBuf.slice(0, -1); renderDots(); }
       } else {
@@ -853,7 +1186,7 @@
   }
 
   /* ---------- desktop icons (interactive) ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'settings', 'about'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'settings', 'about', 'audit', 'tv'];
 
   let desktopState = loadDesktopState();
   function loadDesktopState() {
@@ -1017,7 +1350,7 @@
       const list = [];
       if (/^[\d+\-*/().%\s]+$/.test(q) && /\d/.test(q)) {
         try {
-          const v = new Function('return (' + q + ')')();
+          const v = safeMath(q);
           if (isFinite(v)) list.push({ icon: '🧮', label: q + ' = ' + v, sub: 'Math', run: () => notify('🧮', 'Calculator', q + ' = ' + v) });
         } catch (e) {}
       }
@@ -1129,7 +1462,7 @@
     if (s.includes('time')) return 'It\u2019s ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.';
     if (s.includes('date')) return 'Today is ' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) + '.';
     if ((m = s.match(/(?:what is|what's|calculate|calc)\s+([\d+\-*/().%\s]+)/))) {
-      try { const v = new Function('return (' + m[1] + ')')(); if (isFinite(v)) return m[1].trim() + ' = ' + v; } catch (e) {}
+      try { const v = safeMath(m[1]); if (isFinite(v)) return m[1].trim() + ' = ' + v; } catch (e) {}
     }
     if (s.includes('about')) { openApp('about'); return 'About Nebula OS. 🪐'; }
     if (s.includes('mission')) { toggleMission(); return 'Mission Control.'; }
@@ -1182,6 +1515,32 @@
       if (!e.target.closest('#menubar')) closeMenus();
     }, true);
 
+    /* a11y: full arrow-key menu navigation */
+    document.addEventListener('keydown', (e) => {
+      if (isLocked()) return;
+      const openIt = items.find((x) => x.classList.contains('open'));
+      if (!openIt) return;
+      const its = Array.prototype.slice.call(openIt.querySelectorAll('.mb-mi'));
+      if (!its.length) return;
+      const idx = its.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault(); e.stopPropagation();
+        const next = e.key === 'ArrowDown' ? (idx < 0 ? 0 : (idx + 1) % its.length) : (idx <= 0 ? its.length - 1 : idx - 1);
+        its[next].focus();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault(); e.stopPropagation();
+        const i = items.indexOf(openIt);
+        const nx = items[(i + (e.key === 'ArrowRight' ? 1 : items.length - 1)) % items.length];
+        closeMenus();
+        nx.classList.add('open');
+        const fi = nx.querySelector('.mb-mi');
+        (fi || nx).focus();
+      } else if (e.key === 'Escape') {
+        closeMenus();
+        openIt.focus();
+      }
+    });
+
     const acts = {
       about: () => openApp('about'),
       settings: () => openApp('settings'),
@@ -1195,6 +1554,7 @@
       wallpaper: () => cycleWallpaper(),
       theme: () => toggleTheme(),
       celebrate: () => OS.celebrate(),
+      tv: () => OS.tv && OS.tv.toggle(),
       arrange: () => arrangeIcons(),
       showDesktop: () => showDesktopAction(),
       mission: () => toggleMission(),
@@ -1376,6 +1736,7 @@
     OS.settings.theme = OS.settings.theme === 'dark' ? 'light' : 'dark';
     OS.saveSettings();
     OS.applySettings();
+    Audit.log('appearance.theme', OS.settings.theme);
     notify('🌓', OS.settings.theme === 'dark' ? 'Dark theme' : 'Light theme', OS.name + ' · ' + OS.settings.theme);
   }
 
@@ -1383,6 +1744,7 @@
     OS.settings.wallpaper = (OS.settings.wallpaper + 1) % WALLPAPERS.length;
     OS.saveSettings();
     OS.applySettings();
+    Audit.log('appearance.wallpaper', WALLPAPERS[OS.settings.wallpaper].name);
     notify('🖼️', 'Wallpaper', WALLPAPERS[OS.settings.wallpaper].name);
   }
 
@@ -1407,7 +1769,7 @@
     const sdBtn = byId('show-desktop');
     if (sdBtn) sdBtn.title = t('taskbar.showDesktop');
     if (isLocked()) {
-      byId('lock-hint').textContent = OS.settings.pin ? t('lock.pin') : t('lock.hint');
+      byId('lock-hint').textContent = OS.settings.pinHash ? t('lock.pin') : t('lock.hint');
       byId('lock-reset').textContent = t('lock.reset');
     }
     document.querySelectorAll('.desktop-icon').forEach((ic) => {
@@ -1472,6 +1834,8 @@
 
   /* ---------- init ---------- */
   OS.init = function () {
+    migratePin();
+    Audit.log('system.boot', 'Nebula OS v2.4.0');
     OS.applySettings();
     applyI18n();
     buildLock();
@@ -1484,6 +1848,12 @@
     buildAssistant();
     tickClock();
     setInterval(tickClock, 1000);
+
+    /* connectivity (users must always know when they're offline) */
+    netStatus(typeof navigator.onLine === 'boolean' ? navigator.onLine : true);
+    window.addEventListener('offline', () => { netStatus(false); Audit.log('net.offline'); notify('📡', t('net.off')); });
+    window.addEventListener('online', () => { netStatus(true); Audit.log('net.online'); notify('📡', t('net.on')); });
+    document.addEventListener('keydown', tvKeyHandler, true);
     setInterval(() => {
       if (OS.settings.idleLock && !isLocked() &&
           (Date.now() - lastActivity) > OS.settings.idleMinutes * 60000) lockScreen();
@@ -1553,6 +1923,10 @@
   /* ---------- public API ---------- */
   window.OS = OS;
   window.APPS = APPS;
+  window.Audit = Audit;
+  window.safeMath = safeMath;
+  window.sha256Hex = sha256Hex;
+  window.TV_STREAMS = TV_STREAMS;
   window.WALLPAPERS = WALLPAPERS;
   window.TASKBAR_H = TASKBAR_H;
   window.registerApp = registerApp;

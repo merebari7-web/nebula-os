@@ -1,6 +1,6 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 20 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 22 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
@@ -22,6 +22,19 @@
 - **App Center** — curated catalog of 19 popular apps with one-tap install, search, and recents
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
+
+### 🏛️ Government Edition (v2.4)
+- **Audit trail** — a capped local event log (boot, app open/close, lock/unlock, PIN changes, theme/wallpaper, file import/export, Android installs, TV launches, data wipes) with its own **Audit Log app**: read-only table, JSON export, confirm-protected clear; also `audit` in the terminal
+- **Hardened PIN** — the lock PIN is now a **salted SHA-256 digest** (pure-JS implementation, zero dependencies); legacy cleartext PINs are transparently migrated and destroyed at boot
+- **Strict CSP** — `script-src 'self'`, no eval anywhere (the calculator/assistant math engine is a dedicated bounded parser), no plugins, locked base-uri/form-action; outbound connections are allow-listed
+- **Section 508 / WCAG 2.1 AA work** — full arrow-key window move/resize from the title bar, arrow-key menubar menu navigation, screen-reader event announcements (window opened/closed, lock), contrast-computed button ink for any accent color, `docs/a11y.html` conformance statement
+- **Connectivity status** — the tray wifi icon dims and the OS announces when you go offline/online (events are audited)
+- **Data governance** — Settings → Security → **Erase all local data** (double-confirmed, audited)
+
+### 📺 TV Edition (v2.4)
+- **TV Mode** — a real 10-foot interface: full-screen launcher for all 22 apps + the streaming catalog, navigable entirely with arrow keys (D-pad/remote), Enter and Esc, with oversized focus targets and a live clock; open it from View menu → TV Mode, the TV app, or `tv` in the terminal
+- **Living Room catalog** — the apps you'd expect on a modern smart TV (YouTube, Netflix, Prime Video, Disney+, Max, Apple TV+, Paramount+, Peacock, DAZN, ESPN, BBC iPlayer, Crunchyroll, Plex, Pluto, Tubi, Twitch, TikTok, Sling, Vudu, Web Browser), each launching through its **official web version**
+- Honest about physics, like the Android layer: browsers can't run TV operating systems — embeddable services embed, the rest get a clean full-screen window with one tap to the official site, and your account/subscription/watch progress are unchanged
 
 ### 🎆 Patriot Edition (v2.3)
 - **Patriot theme** — a full third theme in Settings: navy glass, gold strokes, gold accent (boot emblem, dock, buttons, focus ring all follow it), persisted like the others
@@ -134,4 +147,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.3.0 — Patriot Edition*
+*Made with ♥ in the browser. v2.4.0 — Government & TV Edition*
