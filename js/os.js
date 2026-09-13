@@ -48,7 +48,8 @@
     pinHash: '',
     pinSalt: '',
     idleLock: true,
-    idleMinutes: 5
+    idleMinutes: 5,
+    tourSeen: false
   };
 
   /* ---------- PIN security (salted SHA-256, never stored in cleartext) ---------- */
@@ -430,7 +431,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.4.0',
+    version: '2.5.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -998,6 +999,68 @@
   OS.ask = ask;
   OS.confirm = confirmDialog;
 
+  /* ---------- onboarding tour ---------- */
+  const TOUR_STEPS = () => [
+    { ic: '🪐', t: t('tour.s1t'), b: t('tour.s1b') },
+    { ic: '🪟', t: t('tour.s2t'), b: t('tour.s2b') },
+    { ic: '⚡', t: t('tour.s3t'), b: t('tour.s3b') },
+    { ic: '🔐', t: t('tour.s4t'), b: t('tour.s4b') },
+    { ic: '📺', t: t('tour.s5t'), b: t('tour.s5b') }
+  ];
+  let tourIdx = 0;
+  function tourClose(finished) {
+    const old = byId('tour');
+    if (old) old.remove();
+    OS.settings.tourSeen = true;
+    OS.saveSettings();
+    Audit.log(finished ? 'tour.completed' : 'tour.skipped');
+  }
+  function tourRender() {
+    const host = byId('tour');
+    if (!host) return;
+    const steps = TOUR_STEPS();
+    const s = steps[tourIdx];
+    host.innerHTML =
+      '<div class="tour-card" role="dialog" aria-modal="true" aria-label="' + escapeHtml(s.t) + '">' +
+        '<div class="tour-top">' +
+          '<span class="tour-step">Step ' + (tourIdx + 1) + ' / ' + steps.length + '</span>' +
+          '<button class="btn ghost sm" data-ts="skip">' + escapeHtml(t('tour.skip')) + '</button>' +
+        '</div>' +
+        '<div class="tour-ic" aria-hidden="true">' + s.ic + '</div>' +
+        '<h3 class="tour-title">' + escapeHtml(s.t) + '</h3>' +
+        '<p class="tour-body">' + escapeHtml(s.b) + '</p>' +
+        '<div class="tour-dots">' + steps.map((_, i) => '<span class="tour-dot' + (i === tourIdx ? ' on' : '') + '"></span>').join('') + '</div>' +
+        '<div class="tour-nav">' +
+          (tourIdx > 0
+            ? '<button class="btn ghost" data-ts="back">' + escapeHtml(t('tour.back')) + '</button>'
+            : '<span class="spacer"></span>') +
+          (tourIdx < steps.length - 1
+            ? '<button class="btn" data-ts="next">' + escapeHtml(t('tour.next')) + '</button>'
+            : '<button class="btn" data-ts="done">' + escapeHtml(t('tour.done')) + '</button>') +
+        '</div>' +
+      '</div>';
+    const primary = host.querySelector('[data-ts="next"], [data-ts="done"]');
+    if (primary) primary.focus();
+  }
+  function tourStart() {
+    if (byId('tour')) return;
+    tourIdx = 0;
+    const host = el('div', 'tour-overlay');
+    host.id = 'tour';
+    host.addEventListener('click', (e) => {
+      const b = e.target.closest('button[data-ts]');
+      if (!b) return;
+      const a = b.dataset.ts;
+      if (a === 'skip') tourClose(false);
+      else if (a === 'back') { tourIdx = Math.max(0, tourIdx - 1); tourRender(); }
+      else if (a === 'next') { tourIdx = Math.min(TOUR_STEPS().length - 1, tourIdx + 1); tourRender(); }
+      else if (a === 'done') tourClose(true);
+    });
+    document.body.appendChild(host);
+    tourRender();
+  }
+  OS.tour = { start: tourStart, close: (f) => tourClose(f !== false) };
+
   /* ---------- clock ---------- */
   function tickClock() {
     const now = new Date();
@@ -1186,7 +1249,7 @@
   }
 
   /* ---------- desktop icons (interactive) ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'settings', 'about', 'audit', 'tv'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'android', 'calendar', 'snake', 'contacts', 'music', 'backup', 'settings', 'about', 'audit', 'tv'];
 
   let desktopState = loadDesktopState();
   function loadDesktopState() {
@@ -1517,7 +1580,7 @@
 
     /* a11y: full arrow-key menu navigation */
     document.addEventListener('keydown', (e) => {
-      if (isLocked()) return;
+      if (isLocked() || byId('tour')) return;
       const openIt = items.find((x) => x.classList.contains('open'));
       if (!openIt) return;
       const its = Array.prototype.slice.call(openIt.querySelectorAll('.mb-mi'));
@@ -1555,6 +1618,7 @@
       theme: () => toggleTheme(),
       celebrate: () => OS.celebrate(),
       tv: () => OS.tv && OS.tv.toggle(),
+      tour: () => OS.tour && OS.tour.start(),
       arrange: () => arrangeIcons(),
       showDesktop: () => showDesktopAction(),
       mission: () => toggleMission(),
@@ -1835,7 +1899,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.4.0');
+    Audit.log('system.boot', 'Nebula OS v2.5.0');
     OS.applySettings();
     applyI18n();
     buildLock();
@@ -1870,6 +1934,10 @@
     /* global keyboard shortcuts */
     document.addEventListener('keydown', (e) => {
       if (isLocked()) return;
+      if (byId('tour')) {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); tourClose(false); }
+        return;
+      }
       if (e.altKey && e.key === 'Tab') {
         e.preventDefault();
         if (!altTab.active) openAltTab();
@@ -1912,6 +1980,7 @@
     });
 
     boot();
+    if (!OS.settings.tourSeen) setTimeout(tourStart, 2400);
     setTimeout(() => {
       if (!localStorage.getItem('nebula.welcomed')) {
         localStorage.setItem('nebula.welcomed', '1');

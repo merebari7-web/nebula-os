@@ -13,3 +13,7 @@ __pycache__/
 .vscode/
 .idea/
 *.swp
+
+# local scratch
+.arena-memory.md
+test/i18n_v250.py

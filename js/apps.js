@@ -22,7 +22,17 @@
     if (n.endsWith('.apk')) return '🤖';
     return '📄';
   }
-  function resolvePath(cwd, arg) {
+  /* read a File's text: modern File.text() first, FileReader fallback (jsdom/tests) */
+function readFileText(f) {
+  return new Promise((res, rej) => {
+    if (typeof f.text === 'function') { f.text().then(res, rej); return; }
+    const r = new FileReader();
+    r.onload = () => res(String(r.result));
+    r.onerror = () => rej(r.error || new Error('read failed'));
+    r.readAsText(f);
+  });
+}
+function resolvePath(cwd, arg) {
     if (!arg) return cwd;
     if (arg.startsWith('/')) return arg;
     return (cwd === '/' ? '/' : cwd + '/') + arg;
@@ -216,7 +226,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 2.4.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.5.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -1391,6 +1401,7 @@
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
+              '<div><span>New in 2.5</span><b>Contacts (vCard/CSV) · Music (local audio) · Backup (one-file restore) · Onboarding tour</b></div>' +
               '<div><span>Compliance</span><b>WCAG 2.1 AA · Section 508 · <a href="docs/a11y.html" target="_blank" rel="noopener">Accessibility &amp; security statement ↗</a></b></div>' +
               '<div><span>Audit</span><b>immutable local event log · PIN (salted SHA-256) · auto-lock</b></div>' +
               '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
@@ -1499,6 +1510,559 @@
             });
           });
           winW.body.appendChild(box);
+        }
+      });
+    }
+  });
+
+
+  /* ============================================================
+     CONTACTS — local people manager (vCard / CSV)
+     ============================================================ */
+  const CT_KEY = 'nebula.contacts.v1';
+  registerApp({
+    id: 'contacts',
+    title: 'Contacts',
+    titleKey: 'app.contacts',
+    icon: '👥',
+    tile: 'linear-gradient(135deg,#06b6d4,#3b82f6)',
+    open() {
+      createWindow({
+        id: 'contacts',
+        appId: 'contacts',
+        title: t('app.contacts'),
+        icon: '👥',
+        width: 800,
+        height: 500,
+        content(winW) {
+          const box = $el('div', 'contacts');
+          box.innerHTML =
+            '<aside class="ct-side">' +
+              '<input class="ct-search" placeholder="' + esc(t('ct.search')) + '" aria-label="' + esc(t('ct.search')) + '">' +
+              '<div class="ct-list"></div>' +
+              '<button class="btn sm" data-new>＋ ' + esc(t('ct.new')) + '</button>' +
+            '</aside>' +
+            '<main class="ct-main">' +
+              '<div class="ct-editor hidden">' +
+                '<input class="ct-f name" placeholder="' + esc(t('ct.name')) + '" aria-label="' + esc(t('ct.name')) + '">' +
+                '<div class="ct-frow">' +
+                  '<input class="ct-f phone" placeholder="' + esc(t('ct.phone')) + '" aria-label="' + esc(t('ct.phone')) + '">' +
+                  '<input class="ct-f email" placeholder="' + esc(t('ct.email')) + '" aria-label="' + esc(t('ct.email')) + '">' +
+                '</div>' +
+                '<textarea class="ct-f notes" rows="4" placeholder="' + esc(t('ct.notes')) + '" aria-label="' + esc(t('ct.notes')) + '"></textarea>' +
+              '</div>' +
+              '<div class="ct-actions">' +
+                '<button class="btn ghost sm" data-vcard>💳 ' + esc(t('ct.export')) + '</button>' +
+                '<button class="btn ghost sm" data-csv>🧾 ' + esc(t('ct.csv')) + '</button>' +
+                '<button class="btn ghost sm" data-import>⬆ ' + esc(t('ct.import')) + '</button>' +
+                '<span class="spacer"></span>' +
+                '<button class="btn sm danger" data-del>🗑 ' + esc(t('ct.delete')) + '</button>' +
+              '</div>' +
+              '<input type="file" hidden data-vcardpick accept=".vcf,.csv">' +
+            '</main>';
+          winW.body.appendChild(box);
+
+          const listEl = box.querySelector('.ct-list');
+          const editor = box.querySelector('.ct-editor');
+          const fName = box.querySelector('.ct-f.name'), fPhone = box.querySelector('.ct-f.phone'),
+                fEmail = box.querySelector('.ct-f.email'), fNotes = box.querySelector('.ct-f.notes');
+          const searchEl = box.querySelector('.ct-search');
+          let contacts = [];
+          try { contacts = JSON.parse(localStorage.getItem(CT_KEY) || '[]'); } catch (e) { contacts = []; }
+          let current = null;
+
+          const save = () => { try { localStorage.setItem(CT_KEY, JSON.stringify(contacts)); } catch (e) {} };
+          const initials = (n) => ((n || '?').trim().split(/\s+/).map((w) => w[0] || '').join('').slice(0, 2).toUpperCase()) || '?';
+
+          function renderList(filter) {
+            const q = (filter || '').trim().toLowerCase();
+            listEl.innerHTML = '';
+            const items = contacts.filter((c) => !q || ((c.name || '') + ' ' + (c.phone || '') + ' ' + (c.email || '')).toLowerCase().includes(q));
+            if (!items.length) listEl.appendChild($el('div', 'fm-empty', esc(t('ct.empty'))));
+            items.forEach((c) => {
+              const b = $el('button', 'ct-item' + (current && current.id === c.id ? ' sel' : ''));
+              b.innerHTML = '<span class="ct-av">' + esc(initials(c.name)) + '</span>' +
+                '<span class="ct-meta"><b>' + esc(c.name || '—') + '</b><small>' + esc((c.phone || c.email) || '—') + '</small></span>';
+              b.addEventListener('click', () => select(c));
+              listEl.appendChild(b);
+            });
+          }
+          function select(c) {
+            current = c;
+            editor.classList.remove('hidden');
+            fName.value = c.name || ''; fPhone.value = c.phone || ''; fEmail.value = c.email || ''; fNotes.value = c.notes || '';
+            renderList(searchEl.value);
+          }
+          function makeNew() {
+            const c = { id: Date.now() + Math.floor(Math.random() * 1e4), name: '', phone: '', email: '', notes: '', updated: Date.now() };
+            contacts.unshift(c);
+            current = c;
+            save();
+            editor.classList.remove('hidden');
+            fName.value = fPhone.value = fEmail.value = fNotes.value = '';
+            renderList(searchEl.value);
+            fName.focus({ preventScroll: true });
+          }
+          function commit() {
+            if (!current) return;
+            const name = fName.value.trim();
+            if (!name) { notify('⚠️', t('ct.needName')); renderList(searchEl.value); return; }
+            current.name = name; current.phone = fPhone.value.trim();
+            current.email = fEmail.value.trim(); current.notes = fNotes.value.trim();
+            current.updated = Date.now();
+            save(); renderList(searchEl.value);
+            notify('✅', t('ct.saved'), name);
+          }
+          [fName, fPhone, fEmail, fNotes].forEach((e2) => e2.addEventListener('change', commit));
+
+          function vcard(c) {
+            return 'BEGIN:VCARD\nVERSION:3.0\nFN:' + c.name +
+              (c.phone ? '\nTEL;TYPE=CELL:' + c.phone : '') +
+              (c.email ? '\nEMAIL:' + c.email : '') +
+              (c.notes ? '\nNOTE:' + c.notes : '') +
+              '\nEND:VCARD\n';
+          }
+          function downloadText(name, text, type) {
+            const a = document.createElement('a');
+            a.href = 'data:' + type + ';charset=utf-8,' + encodeURIComponent(text);
+            a.download = name;
+            document.body.appendChild(a); a.click(); a.remove();
+          }
+          box.querySelector('[data-vcard]').addEventListener('click', () => {
+            if (!contacts.length) { notify('⚠️', t('ct.empty')); return; }
+            downloadText('nebula-contacts.vcf', contacts.map(vcard).join(''), 'text/vcard');
+            Audit.log('contacts.export', 'vCard ×' + contacts.length);
+            notify('💳', t('ct.export'), contacts.length + '');
+          });
+          box.querySelector('[data-csv]').addEventListener('click', () => {
+            if (!contacts.length) { notify('⚠️', t('ct.empty')); return; }
+            const csv = 'name,phone,email,notes\n' + contacts.map((c) =>
+              [c.name, c.phone || '', c.email || '', c.notes || ''].map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\n');
+            downloadText('nebula-contacts.csv', csv, 'text/csv');
+            Audit.log('contacts.export', 'CSV ×' + contacts.length);
+            notify('🧾', t('ct.csv'), contacts.length + '');
+          });
+          const pick = box.querySelector('[data-vcardpick]');
+          box.querySelector('[data-import]').addEventListener('click', () => pick.click());
+          pick.addEventListener('change', async () => {
+            const f = pick.files && pick.files[0];
+            pick.value = '';
+            if (!f) return;
+            try {
+              const text = await readFileText(f);
+              const added = parseContacts(text);
+              if (!added.length) throw new Error('none');
+              let fresh = 0;
+              added.forEach((c) => {
+                if (!contacts.some((x) => x.name && c.name && x.name.toLowerCase() === c.name.toLowerCase())) { contacts.push(c); fresh++; }
+              });
+              save(); renderList(searchEl.value);
+              Audit.log('contacts.import', f.name + ' ×' + fresh);
+              notify('⬆️', t('ct.import'), t('ct.imported').replace('%d', fresh));
+            } catch (e) {
+              notify('⚠️', t('ct.importErr'), f.name);
+            }
+          });
+          function parseContacts(text) {
+            const out = [];
+            if (/BEGIN:VCARD/i.test(text)) {
+              text.split(/BEGIN:VCARD/i).slice(1).forEach((chunk, ci) => {
+                const end = chunk.indexOf('END:VCARD');
+                const body = end >= 0 ? chunk.slice(0, end) : chunk;
+                const get = (k) => {
+                  const m = body.match(new RegExp('^' + k + '(?:;[^:\n]*)?:([^\n]+)', 'mi'));
+                  return m ? m[1].trim() : '';
+                };
+                const name = get('FN') || (get('N') || '').split(';').reverse().filter(Boolean).join(' ');
+                if (name) out.push({ id: Date.now() + ci * 7 + Math.floor(Math.random() * 1e3), name, phone: get('TEL'), email: get('EMAIL'), notes: get('NOTE'), updated: Date.now() });
+              });
+              return out;
+            }
+            const rows = text.trim().split(/\r?\n/);
+            if (!rows.length) return out;
+            const start = rows[0].toLowerCase().includes('name') ? 1 : 0;
+            for (let i = start; i < rows.length; i++) {
+              const cells = (rows[i].match(/("(?:[^"]|"")*"|[^,]*)(?:,|$)/g) || []).map((c) =>
+                c.replace(/,$/, '').replace(/^"(.*)"$/, '$1').replace(/""/g, '"').trim());
+              if (cells[0]) out.push({ id: Date.now() + i * 13 + Math.floor(Math.random() * 1e3), name: cells[0], phone: cells[1] || '', email: cells[2] || '', notes: cells[3] || '', updated: Date.now() });
+            }
+            return out;
+          }
+          box.querySelector('[data-del]').addEventListener('click', () => {
+            if (!current) return;
+            confirmDialog(t('ct.delete') + ' ' + (current.name || '?') + '?', '', t('ct.delete')).then((ok2) => {
+              if (!ok2) return;
+              contacts = contacts.filter((x) => x.id !== current.id);
+              current = contacts[0] || null;
+              save();
+              if (current) select(current);
+              else { editor.classList.add('hidden'); renderList(searchEl.value); }
+            });
+          });
+          box.querySelector('[data-new]').addEventListener('click', makeNew);
+          searchEl.addEventListener('input', () => renderList(searchEl.value));
+          winW.hooks.focus = () => { (current ? fNotes : searchEl).focus({ preventScroll: true }); };
+          if (contacts.length) select(contacts[0]); else renderList('');
+        }
+      });
+    }
+  });
+
+  /* ============================================================
+     MUSIC — local audio player (Web Audio, in-memory)
+     ============================================================ */
+  registerApp({
+    id: 'music',
+    title: 'Music',
+    titleKey: 'app.music',
+    icon: '🎵',
+    tile: 'linear-gradient(135deg,#f472b6,#8b5cf6)',
+    open() {
+      createWindow({
+        id: 'music',
+        appId: 'music',
+        title: t('app.music'),
+        icon: '🎵',
+        width: 740,
+        height: 520,
+        content(winW) {
+          const box = $el('div', 'music');
+          box.innerHTML =
+            '<div class="mu-stage">' +
+              '<div class="mu-disc" aria-hidden="true">🎵</div>' +
+              '<div class="mu-now">' +
+                '<span class="mu-eyebrow">' + esc(t('mu.now')) + '</span>' +
+                '<b class="mu-title">—</b>' +
+                '<div class="mu-bars" aria-hidden="true">' + Array.from({ length: 22 }, () => '<span class="mu-bar"></span>').join('') + '</div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="mu-ctl">' +
+              '<button class="btn icon" data-prev title="Previous">⏮</button>' +
+              '<button class="btn" data-play>▶ ' + esc(t('mu.play')) + '</button>' +
+              '<button class="btn icon" data-next title="Next">⏭</button>' +
+              '<input type="range" class="mu-seek" min="0" max="100" value="0" step="0.1" aria-label="Seek">' +
+              '<span class="mu-time">0:00 / 0:00</span>' +
+              '<span class="spacer"></span>' +
+              '<input type="range" class="mu-vol" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">' +
+            '</div>' +
+            '<div class="mu-list-wrap">' +
+              '<div class="mu-list-head"><b>' + esc(t('mu.list')) + '</b>' +
+                '<span>' +
+                  '<button class="btn ghost sm" data-demo>✨ ' + esc(t('mu.demo')) + '</button> ' +
+                  '<button class="btn ghost sm" data-add>⬆ ' + esc(t('mu.add')) + '</button>' +
+                '</span>' +
+              '</div>' +
+              '<div class="mu-list"></div>' +
+              '<input type="file" hidden data-pick accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" multiple>' +
+            '</div>' +
+            '<p class="mu-note">' + esc(t('mu.note')) + '</p>' +
+            '<p class="mu-warn hidden">' + esc(t('mu.noengine')) + '</p>';
+          winW.body.appendChild(box);
+
+          const AC = window.AudioContext || window.webkitAudioContext;
+          const hasAudio = !!AC;
+          let actx = null, gain = null, srcNode = null;
+          let tracks = [];      // {id,name,demo,dur,sr,samples,buffer}
+          let cur = -1, playing = false, startAt = 0, offAt = 0, raf = 0;
+
+          const listEl = box.querySelector('.mu-list');
+          const titleEl = box.querySelector('.mu-title');
+          const seek = box.querySelector('.mu-seek'), timeEl = box.querySelector('.mu-time'),
+                volEl = box.querySelector('.mu-vol'), playBtn = box.querySelector('[data-play]');
+          const bars = Array.from(box.querySelectorAll('.mu-bar'));
+          const warnEl = box.querySelector('.mu-warn');
+          if (!hasAudio) warnEl.classList.remove('hidden');
+
+          const fmtT = (s) => { s = Math.max(0, Math.floor(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+          function renderList() {
+            listEl.innerHTML = '';
+            if (!tracks.length) listEl.appendChild($el('div', 'fm-empty', esc(t('mu.empty'))));
+            tracks.forEach((tr, i) => {
+              const b = $el('button', 'mu-track' + (i === cur ? ' cur' : ''));
+              b.innerHTML = '<span class="mu-t-ic">' + (tr.demo ? '✨' : '🎵') + '</span><b>' + esc(tr.name) + '</b><small>' + fmtT(tr.dur) + '</small>';
+              b.addEventListener('click', () => play(i));
+              listEl.appendChild(b);
+            });
+          }
+          function ensureCtx() {
+            if (!hasAudio) return null;
+            if (!actx) {
+              actx = new AC();
+              gain = actx.createGain();
+              gain.gain.value = parseFloat(volEl.value);
+              gain.connect(actx.destination);
+            }
+            if (actx.state === 'suspended') actx.resume();
+            return actx;
+          }
+          function stopSrc() {
+            if (srcNode) { try { srcNode.stop(); } catch (e) {} srcNode = null; }
+          }
+          function materialize(tr) {
+            if (tr.buffer) return tr.buffer;
+            if (!actx) return null;
+            const ab = actx.createBuffer(1, tr.samples.length, tr.sr);
+            ab.getChannelData(0).set(tr.samples);
+            tr.buffer = ab;
+            return ab;
+          }
+          function play(i) {
+            cur = i;
+            const c = ensureCtx();
+            const tr = tracks[i];
+            if (!c || !tr || !materialize(tr)) { renderList(); return; }
+            offAt = 0;
+            startSrc();
+            renderList();
+            tick();
+          }
+          function startSrc() {
+            stopSrc();
+            if (!actx) return;
+            srcNode = actx.createBufferSource();
+            srcNode.buffer = tracks[cur].buffer;
+            srcNode.connect(gain);
+            srcNode.onended = () => {
+              if (playing && offAt >= tracks[cur].dur - 0.08) next();
+            };
+            srcNode.start(0, offAt);
+            playing = true;
+            startAt = actx.currentTime - offAt;
+            playBtn.textContent = '⏸ ' + t('mu.pause');
+            titleEl.textContent = tracks[cur].name;
+          }
+          function pause() {
+            if (!actx) return;
+            offAt = actx.currentTime - startAt;
+            stopSrc();
+            playing = false;
+            playBtn.textContent = '▶ ' + t('mu.play');
+            cancelAnimationFrame(raf);
+          }
+          function next() { if (tracks.length) play((cur + 1) % tracks.length); }
+          function prev() {
+            if (!tracks.length) return;
+            if (actx && playing && (actx.currentTime - startAt) > 3) play(cur);
+            else play((cur - 1 + tracks.length) % tracks.length);
+          }
+          const posNow = () => (playing && actx ? Math.min(tracks[cur].dur, actx.currentTime - startAt) : (cur >= 0 ? Math.min(tracks[cur].dur, offAt) : 0));
+          function tick() {
+            if (!playing) return;
+            const p = posNow(), d = tracks[cur] ? tracks[cur].dur : 0;
+            seek.value = d ? ((p / d) * 100).toFixed(1) : 0;
+            timeEl.textContent = fmtT(p) + ' / ' + fmtT(d);
+            const nowMs = Date.now();
+            bars.forEach((b2, i2) => {
+              b2.style.height = (2 + Math.abs(Math.sin(nowMs / 170 + i2 * 0.7)) * 14).toFixed(1) + 'px';
+            });
+            raf = requestAnimationFrame(tick);
+          }
+          playBtn.addEventListener('click', () => {
+            if (!tracks.length) { addDemo(); if (!tracks.length) return; if (!hasAudio) return; play(0); return; }
+            if (playing) pause();
+            else { if (cur < 0) play(0); else { startSrc(); tick(); } }
+          });
+          box.querySelector('[data-next]').addEventListener('click', next);
+          box.querySelector('[data-prev]').addEventListener('click', prev);
+          volEl.addEventListener('input', () => { if (gain) gain.gain.value = parseFloat(volEl.value); });
+          seek.addEventListener('change', () => {
+            if (cur < 0 || !tracks[cur]) return;
+            const d = tracks[cur].dur;
+            const wasPlaying = playing && !!actx;
+            offAt = (parseFloat(seek.value) / 100) * d;
+            if (wasPlaying) { stopSrc(); startSrc(); }
+            else { timeEl.textContent = fmtT(offAt) + ' / ' + fmtT(d); seek.value = ((offAt / d) * 100).toFixed(1); }
+          });
+
+          /* --- demo tracks: pure-JS synthesis (no assets, no network) --- */
+          function mkTrack(name, dur, gen) {
+            const sr = 22050, n = Math.floor(sr * dur);
+            const f = new Float32Array(n);
+            for (let i = 0; i < n; i++) f[i] = gen(i / sr);
+            let peak = 0;
+            for (let i = 0; i < n; i++) peak = Math.max(peak, Math.abs(f[i]));
+            const g = peak ? 0.82 / peak : 0;
+            for (let i = 0; i < n; i++) f[i] *= g;
+            const fade = (t2) => Math.min(1, t2 / 0.8, (dur - t2) / 1.2);
+            for (let i = 0; i < n; i++) f[i] *= Math.max(0, fade(i / sr));
+            return { id: Date.now() + Math.floor(Math.random() * 1e4), name, demo: true, sr, dur, samples: f, buffer: null };
+          }
+          const TAU = Math.PI * 2;
+          function addDemo() {
+            if (tracks.some((x) => x.demo)) return;
+            tracks.push(mkTrack('Nebula Drift', 12, (t2) => {
+              const o = (Math.sin(TAU * 110 * t2) * 0.5 + Math.sin(TAU * 220 * t2 + 1.3) * 0.24 + Math.sin(TAU * 327.5 * t2) * 0.12) *
+                (0.62 + 0.38 * Math.sin(TAU * 0.17 * t2));
+              return o;
+            }));
+            tracks.push(mkTrack('Orbit Pulse', 8, (t2) => {
+              const p = t2 % 0.5;
+              const kick = Math.sin(TAU * 48 * p + 2.6 * Math.sin(TAU * 28 * p)) * Math.exp(-8.5 * p);
+              const bassNotes = [55, 65.41, 49, 58.27];
+              const bn = bassNotes[Math.floor(t2 / 2) % bassNotes.length];
+              const bass = Math.sin(TAU * bn * t2) * 0.16;
+              const hat = (Math.random() * 2 - 1) * 0.05 * Math.exp(-38 * (t2 % 0.25));
+              return kick * 0.9 + bass + hat;
+            }));
+            tracks.push(mkTrack('Starfall Arp', 10, (t2) => {
+              const seq = [0, 4, 7, 12, 7, 4, 2, 9];
+              const step = Math.floor(t2 / 0.125);
+              const st = t2 % 0.125;
+              const freq = 220 * Math.pow(2, seq[step % seq.length] / 12);
+              return Math.sin(TAU * freq * t2) * Math.exp(-7 * st) * 0.9 + Math.sin(TAU * freq / 2 * t2) * Math.exp(-7 * st) * 0.25;
+            }));
+            renderList();
+          }
+          box.querySelector('[data-demo]').addEventListener('click', addDemo);
+
+          const pick = box.querySelector('[data-pick]');
+          box.querySelector('[data-add]').addEventListener('click', () => pick.click());
+          pick.addEventListener('change', async () => {
+            const files = Array.from(pick.files || []);
+            pick.value = '';
+            if (!files.length) return;
+            const c = ensureCtx();
+            if (!c) { warnEl.classList.remove('hidden'); return; }
+            let added = 0;
+            for (const f of files) {
+              try {
+                const ab = await f.arrayBuffer();
+                const buf = await c.decodeAudioData(ab);
+                tracks.push({ id: Date.now() + Math.floor(Math.random() * 1e4), name: (f.name || 'track').replace(/\.[^.]+$/, ''), demo: false, sr: buf.sampleRate, dur: buf.duration, samples: null, buffer: buf });
+                added++;
+              } catch (e) { /* undecodable — skip */ }
+            }
+            if (added) {
+              Audit.log('music.import', added + ' tracks');
+              notify('🎵', t('mu.added').replace('%d', added));
+              renderList();
+              if (cur < 0) play(0);
+            } else {
+              notify('⚠️', t('mu.decErr'));
+            }
+          });
+
+          renderList();
+          winW.onClose = () => {
+            cancelAnimationFrame(raf);
+            stopSrc();
+            if (actx) { try { actx.close(); } catch (e) {} }
+          };
+        }
+      });
+    }
+  });
+
+  /* ============================================================
+     BACKUP — one-file data portability (JSON bundle)
+     ============================================================ */
+  registerApp({
+    id: 'backup',
+    title: 'Backup',
+    titleKey: 'app.backup',
+    icon: '🧳',
+    tile: 'linear-gradient(135deg,#10b981,#0ea5e9)',
+    open() {
+      createWindow({
+        id: 'backup',
+        appId: 'backup',
+        title: t('app.backup'),
+        icon: '🧳',
+        width: 640,
+        height: 500,
+        content(winW) {
+          const box = $el('div', 'backup');
+          box.innerHTML =
+            '<div class="bk-body"></div>' +
+            '<input type="file" hidden data-pick accept=".json,application/json">';
+          winW.body.appendChild(box);
+          const body = box.querySelector('.bk-body');
+          const pick = box.querySelector('[data-pick]');
+
+          const CAT_ICONS = { fs: '📁', notes: '📝', contacts: '👥', settings: '⚙️', audit: '📜', android: '🤖', desktop: '🖥️', backup: '🧳' };
+          function collect() {
+            const entries = {};
+            let bytes = 0, keys = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k.indexOf('nebula.') === 0) {
+                const v = localStorage.getItem(k) || '';
+                entries[k] = v;
+                bytes += v.length + k.length;
+                keys++;
+              }
+            }
+            return { entries, bytes, keys };
+          }
+          function render() {
+            const { entries, keys } = collect();
+            const cats = {};
+            Object.keys(entries).forEach((k) => {
+              const ns = k.replace(/^nebula\./, '').split('.')[0];
+              cats[ns] = (cats[ns] || 0) + 1;
+            });
+            const last = localStorage.getItem('nebula.backup.last');
+            body.innerHTML =
+              '<div class="bk-summary">' +
+                '<div class="bk-big">' + keys + '</div>' +
+                '<div class="bk-sub">' + esc(t('bk.last')) + ' · ' + (last ? new Date(parseInt(last, 10)).toLocaleString() : esc(t('bk.never'))) + '</div>' +
+              '</div>' +
+              '<div class="bk-cats">' + Object.keys(cats).map((ns) =>
+                '<span class="bk-cat">' + (CAT_ICONS[ns] || '📦') + ' ' + esc(ns) + ' <b>' + cats[ns] + '</b></span>').join('') + '</div>' +
+              '<div class="bk-note">' + esc(t('bk.note')) + '</div>' +
+              '<div class="bk-actions">' +
+                '<button class="btn" data-export>💾 ' + esc(t('bk.export')) + '</button>' +
+                '<button class="btn ghost" data-restore>⬆ ' + esc(t('bk.restore')) + '</button>' +
+              '</div>';
+          }
+          box.addEventListener('click', (e) => {
+            const b = e.target.closest('button');
+            if (!b) return;
+            if (b.hasAttribute('data-export')) doExport();
+            else if (b.hasAttribute('data-restore')) pick.click();
+          });
+          function doExport() {
+            const { entries, keys } = collect();
+            const bundle = { app: 'nebula-os', kind: 'backup', version: OS.version, ts: Date.now(), count: keys, entries };
+            const blob = new Blob([JSON.stringify(bundle)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'nebula-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+            localStorage.setItem('nebula.backup.last', String(bundle.ts));
+            Audit.log('backup.created', keys + ' keys · v' + OS.version);
+            notify('💾', t('bk.created'), a.download);
+            render();
+          }
+          pick.addEventListener('change', async () => {
+            const f = pick.files && pick.files[0];
+            pick.value = '';
+            if (!f) return;
+            let b;
+            try {
+              const raw = await readFileText(f);
+              b = JSON.parse(raw);
+            } catch (e) {
+              notify('⚠️', t('bk.bad'), f.name);
+              return;
+            }
+            if (!b || b.app !== 'nebula-os' || b.kind !== 'backup' || !b.entries || typeof b.entries !== 'object') {
+              notify('⚠️', t('bk.bad'), f.name);
+              return;
+            }
+            confirmDialog(t('bk.restore'), t('bk.note'), t('bk.restore')).then((ok2) => {
+              if (!ok2) return;
+              Object.keys(b.entries).forEach((k) => {
+                if (k.indexOf('nebula.') === 0) localStorage.setItem(k, String(b.entries[k]));
+              });
+              Audit.log('backup.restored', b.count + ' keys from ' + f.name);
+              notify('⬆️', t('bk.restored'), f.name);
+              setTimeout(() => location.reload(), 500);
+            });
+          });
+          render();
         }
       });
     }

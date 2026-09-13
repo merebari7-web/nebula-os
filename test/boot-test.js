@@ -60,7 +60,7 @@ function buildApk(pkg, ver) {
 (async () => {
   const vc = new VirtualConsole();
   vc.on('jsdomError', (e) => {
-    if (!/not implemented|Could not load link|Could not load img|createObjectURL is not a function/.test(String(e)))
+    if (!/not implemented|could not load|createObjectURL is not a function/i.test(String(e)))
       errors.push('jsdom: ' + e.message);
   });
   vc.on('error', (...a) => errors.push('console.error: ' + a.join(' ')));
@@ -108,17 +108,42 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.4.0', 'OS booted at v2.4.0');
+  ok(window.OS && window.OS.version === '2.5.0', 'OS booted at v2.5.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
-  ok(Object.keys(window.APPS).length === 22, '22 apps registered (' + Object.keys(window.APPS).length + ')');
+  ok(Object.keys(window.APPS).length === 25, '25 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
   ok(typeof window.OS.settings === 'object', 'settings state initialized after boot');
   ok(document.body.dataset.theme === 'dark', 'default theme dark applied');
 
+  /* ---------- onboarding tour ---------- */
+  console.log('--- onboarding tour ---');
+  let tourEl = document.getElementById('tour');
+  ok(!!tourEl && !!tourEl.querySelector('.tour-card'), 'tour auto-opens on first run');
+  ok(tourEl.querySelector('.tour-step').textContent === 'Step 1 / 5', 'tour starts at step 1 of 5');
+  const label1 = tourEl.querySelector('.tour-card').getAttribute('aria-label');
+  tourEl.querySelector('[data-ts="next"]').click();
+  await sleep(60);
+  const label2 = document.getElementById('tour').querySelector('.tour-card').getAttribute('aria-label');
+  ok(label1 !== label2, 'tour Next advances to step 2');
+  document.getElementById('tour').querySelector('[data-ts="skip"]').click();
+  await sleep(60);
+  ok(!document.getElementById('tour'), 'tour skip closes it and marks seen');
+  ok(window.OS.settings.tourSeen === true, 'tourSeen persisted in settings');
+  ok(window.Audit.read().some((e) => e.event === 'tour.skipped'), 'tour skip audited');
+  const brand = document.querySelector('#mb-brand');
+  brand.click();
+  await sleep(60);
+  brand.querySelector('[data-act="tour"]').click();
+  await sleep(60);
+  ok(!!document.getElementById('tour'), 'Nebula menu > Restart tour reopens the tour');
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  await sleep(60);
+  ok(!document.getElementById('tour'), 'Esc closes the tour');
+
   /* ---------- desktop & dock ---------- */
   console.log('--- desktop & dock ---');
   const icons = document.querySelectorAll('#desktop-icons .desktop-icon');
-  ok(icons.length === 22, '22 desktop icons rendered');
+  ok(icons.length === 25, '25 desktop icons rendered');
   const dockIcons = document.querySelectorAll('#dock .dock-icon');
   ok(dockIcons.length >= 12, 'dock populated (' + dockIcons.length + ')');
   const startBtn = document.getElementById('start-btn');
@@ -126,14 +151,14 @@ function buildApk(pkg, ver) {
   startBtn.click();
   await sleep(80);
   const startApps = document.querySelectorAll('#start-grid .start-app');
-  ok(startApps.length === 22, 'start menu lists all 22 apps');
+  ok(startApps.length === 25, 'start menu lists all 25 apps');
   document.body.click();
   await sleep(60);
 
   /* ---------- menubar: roles + arrow-key navigation ---------- */
   console.log('--- menubar a11y ---');
   ok(document.querySelectorAll('.mb-menu[role="menu"]').length === 5, '5 menubar menus have role=menu');
-  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 20, '20 menubar items have role=menuitem');
+  ok(document.querySelectorAll('.mb-mi[role="menuitem"]').length === 21, '21 menubar items have role=menuitem');
   const fileMenu = document.querySelector('#menubar .mb-item[data-menu]');
   fileMenu.click();
   await sleep(60);
@@ -149,6 +174,7 @@ function buildApk(pkg, ver) {
   firstItem.click(); // About (first File-menu item)
   await sleep(150);
   ok(!!window.OS.windows.get('about'), 'menu item action opens About');
+  ok(window.OS.windows.get('about').el.textContent.includes('New in 2.5'), 'About lists the v2.5 new apps');
   document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   await sleep(60);
 
@@ -388,7 +414,7 @@ function buildApk(pkg, ver) {
   const home = document.getElementById('tv-home');
   ok(!home.classList.contains('hidden'), 'TV Mode opens full-screen launcher');
   const tvTiles = home.querySelectorAll('.tv-tile');
-  ok(tvTiles.length === 42, 'TV Mode shows 22 apps + 20 streams (' + tvTiles.length + ')');
+  ok(tvTiles.length === 45, 'TV Mode shows 25 apps + 20 streams (' + tvTiles.length + ')');
   ok(tvTiles[0].classList.contains('focused'), 'TV Mode starts with first tile focused');
   home.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
   await sleep(60);
@@ -425,6 +451,99 @@ function buildApk(pkg, ver) {
   window.OS.settings.wallpaper = libIdx; window.OS.saveSettings(); window.OS.applySettings();
   ok(window.OS.settings.wallpaper === libIdx && JSON.parse(window.localStorage.getItem('nebula.settings.v1')).wallpaper === libIdx, 'Liberty wallpaper index persisted');
   window.OS.settings.wallpaper = 0; window.OS.saveSettings(); window.OS.applySettings();
+
+  /* ---------- contacts ---------- */
+  console.log('--- contacts ---');
+  window.openApp('contacts');
+  await sleep(160);
+  const ctW = window.OS.windows.get('contacts');
+  ok(!!ctW, 'contacts app opens');
+  ctW.el.querySelector('[data-new]').click();
+  await sleep(60);
+  const ctName = ctW.el.querySelector('.ct-f.name');
+  ctName.value = 'Ada Lovelace';
+  ctName.dispatchEvent(new window.Event('change', { bubbles: true }));
+  await sleep(60);
+  ok(ctW.el.querySelectorAll('.ct-item').length === 1 && ctW.el.textContent.includes('Ada Lovelace'), 'contact created and listed');
+  const ctSearch = ctW.el.querySelector('.ct-search');
+  ctSearch.value = 'zzz-nobody';
+  ctSearch.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await sleep(60);
+  ok(ctW.el.querySelectorAll('.ct-item').length === 0, 'contact search filters the list');
+  ctSearch.value = '';
+  ctSearch.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await sleep(60);
+  ctW.el.querySelector('[data-vcard]').click();
+  await sleep(80);
+  ctW.el.querySelector('[data-csv]').click();
+  await sleep(80);
+  const ctPick = ctW.el.querySelector('[data-vcardpick]');
+  const vcf = 'BEGIN:VCARD\nVERSION:3.0\nFN:Grace Hopper\nTEL;TYPE=CELL:555-0100\nEMAIL:grace@example.gov\nEND:VCARD\n';
+  const vcfFile = new window.File([vcf], 'people.vcf', { type: 'text/vcard' });
+  Object.defineProperty(ctPick, 'files', { value: [vcfFile], configurable: true });
+  ctPick.dispatchEvent(new window.Event('change', { bubbles: true }));
+  await sleep(150);
+  ok(ctW.el.querySelectorAll('.ct-item').length === 2 && ctW.el.textContent.includes('Grace Hopper'), 'vCard import adds a contact');
+  ok(window.Audit.read().some((e) => e.event === 'contacts.import'), 'contact import audited');
+  window.closeWindow('contacts');
+  await sleep(80);
+
+  /* ---------- music ---------- */
+  console.log('--- music ---');
+  window.openApp('music');
+  await sleep(160);
+  const muW = window.OS.windows.get('music');
+  ok(!!muW, 'music app opens');
+  ok(muW.el.querySelectorAll('.mu-track').length === 0, 'music starts with an empty playlist');
+  muW.el.querySelector('[data-demo]').click();
+  await sleep(80);
+  const muTracks = muW.el.querySelectorAll('.mu-track');
+  ok(muTracks.length === 3, 'demo button adds 3 synthesized tracks');
+  ok(muW.el.textContent.includes('Nebula Drift') && muW.el.textContent.includes('Starfall Arp'), 'demo track names rendered');
+  muW.el.querySelector('[data-play]').click();
+  await sleep(100);
+  ok(muW.el.querySelector('.mu-warn') !== null, 'music degrades gracefully without an AudioContext');
+  window.closeWindow('music');
+  await sleep(80);
+
+  /* ---------- backup (last: restore path reloads after 500ms) ---------- */
+  console.log('--- backup ---');
+  window.openApp('backup');
+  await sleep(160);
+  const bkW = window.OS.windows.get('backup');
+  ok(!!bkW, 'backup app opens');
+  const bkCount = parseInt(bkW.el.querySelector('.bk-big').textContent, 10);
+  ok(bkCount >= 6, 'backup summarizes stored data keys (' + bkCount + ')');
+  bkW.el.querySelector('[data-export]').click();
+  await sleep(100);
+  ok(!!window.localStorage.getItem('nebula.backup.last'), 'export stamps last-backup time');
+  ok(window.Audit.read().some((e) => e.event === 'backup.created'), 'backup export audited');
+  /* reject an invalid bundle */
+  const bkPick = bkW.el.querySelector('[data-pick]');
+  Object.defineProperty(bkPick, 'files', { value: [new window.File(['definitely not json'], 'bad.json', { type: 'application/json' })], configurable: true });
+  bkPick.dispatchEvent(new window.Event('change', { bubbles: true }));
+  await sleep(120);
+  ok(!window.Audit.read().some((e) => e.event === 'backup.restored'), 'invalid backup file rejected');
+  /* full round-trip through the app: snapshot, mutate, restore -> mutation reverted */
+  window.localStorage.setItem('nebula.testprobe', 'BEFORE');
+  const snap = {};
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const k = window.localStorage.key(i);
+    if (k.indexOf('nebula.') === 0) snap[k] = window.localStorage.getItem(k);
+  }
+  window.localStorage.setItem('nebula.testprobe', 'AFTER');
+  const bundle = { app: 'nebula-os', kind: 'backup', version: window.OS.version, ts: Date.now(), count: Object.keys(snap).length, entries: snap };
+  Object.defineProperty(bkW.el.querySelector('[data-pick]'), 'files', {
+    value: [new window.File([JSON.stringify(bundle)], 'nebula-backup.json', { type: 'application/json' })], configurable: true
+  });
+  bkW.el.querySelector('[data-pick]').dispatchEvent(new window.Event('change', { bubbles: true }));
+  await sleep(150);
+  const okBtn = document.querySelector('.modal-overlay [data-a="ok"]');
+  ok(!!okBtn, 'restore asks for confirmation');
+  okBtn.click();
+  await sleep(150);
+  ok(window.localStorage.getItem('nebula.testprobe') === 'BEFORE', 'restore reverts post-backup changes (round-trip)');
+  ok(window.Audit.read().some((e) => e.event === 'backup.restored'), 'restore audited');
 
   /* ---------- CSS system checks ---------- */
   const cssText = fs.readFileSync(path.join(ROOT, 'css', 'style.css'), 'utf8');

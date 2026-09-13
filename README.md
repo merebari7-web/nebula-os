@@ -1,6 +1,6 @@
 # 🪐 Nebula OS
 
-**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 22 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
+**An operating system for the web.** A complete desktop environment that runs 100% inside a browser tab — macOS-style menu bar, dock with magnification, Spotlight, Mission Control, an offline AI-free assistant, virtual filesystem with real file import/export, live crypto markets, live weather, live maps, YouTube player, code editor, beat sequencer, 25 apps, **an Android compatibility layer** (install real APKs, run apps through their official web versions), 8 languages, RTL support — and it's **installable as a PWA** with an offline shell. No frameworks, no build step, no dependencies. Just HTML, CSS and vanilla JavaScript.
 
 ![og](docs/og.png)
 
@@ -22,6 +22,12 @@
 - **App Center** — curated catalog of 19 popular apps with one-tap install, search, and recents
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
+
+### 🧭 New Apps (v2.5)
+- **Contacts** — a local people manager: add/edit/delete, live search, and real **vCard (.vcf) + CSV export/import** for round-tripping with any phone or address book. Stored locally, nothing uploaded
+- **Music** — a local audio player: import MP3/WAV/OGG files and play them with Web Audio (seek, volume, prev/next, animated now-playing). Plus three built-in Web-Audio-synthesized demo tracks (Nebula Drift, Orbit Pulse, Starfall Arp). Honest physics: tracks play in-memory per session and never leave your device
+- **Backup** — one-file data portability: **Create backup** downloads a single JSON bundle of *everything* Nebula stores (files, notes, contacts, settings, audit log, Android installs); **Restore** validates and re-imports it. Air-gapped by design
+- **Onboarding tour** — a five-step first-launch guided tour (desktop, windows & keyboard, Spotlight/terminal, security & data, TV/Android/i18n); auto-shown once, restartable from the Nebula menu
 
 ### 🏛️ Government Edition (v2.4)
 - **Audit trail** — a capped local event log (boot, app open/close, lock/unlock, PIN changes, theme/wallpaper, file import/export, Android installs, TV launches, data wipes) with its own **Audit Log app**: read-only table, JSON export, confirm-protected clear; also `audit` in the terminal
@@ -147,4 +153,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.4.0 — Government & TV Edition*
+*Made with ♥ in the browser. v2.5.0 — New Apps Edition*
