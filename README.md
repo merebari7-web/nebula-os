@@ -128,4 +128,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.1.0 — Android Edition*
+*Made with ♥ in the browser. v2.2.0 — Design & Accessibility Edition*

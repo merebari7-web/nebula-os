@@ -3,8 +3,8 @@
    ============================================================ */
 :root{
   --accent:#0a84ff;
-  --taskbar-h:56px;
-  --menubar-h:26px;
+  --taskbar-h:calc(56px + env(safe-area-inset-bottom, 0px));
+  --menubar-h:calc(26px + env(safe-area-inset-top, 0px));
   --glass:rgba(13,16,31,.66);
   --glass-2:rgba(17,21,40,.86);
   --stroke:rgba(255,255,255,.09);
@@ -15,6 +15,15 @@
   --muted:#8b93b8;
   --danger:#ff5c7a;
   --radius:14px;
+  --success:#10b981; --warn:#f5a524;
+  /* type scale */ --fs-xs:11px; --fs-sm:12px; --fs-md:13px; --fs-lg:15px; --fs-xl:19px;
+  /* radii */ --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px;
+  /* elevation */
+  --shadow-1:0 4px 14px rgba(0,0,0,.25);
+  --shadow-2:0 16px 44px rgba(0,0,0,.45);
+  --shadow-3:0 28px 70px rgba(0,0,0,.5), 0 4px 14px rgba(0,0,0,.3);
+  /* motion */ --dur-1:.12s; --dur-2:.2s; --dur-3:.35s;
+  --ease:cubic-bezier(.2,.8,.3,1);
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Outfit","Segoe UI",Roboto,Inter,"Helvetica Neue",Arial,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,"Cascadia Code","Fira Code",Consolas,monospace;
 }
@@ -37,6 +46,25 @@ body{
   color:var(--text);
   background:#05060f;
   -webkit-font-smoothing:antialiased;
+}
+/* z-index reference map (do not renumber casually):
+   2 icons · 5-6 window chrome · 10 window layer · 900 taskbar · 950 start menu
+   1200 context menu · 1500 alt-tab · 2000-2100 menubar+menus · 2200 assistant
+   2500 mission control · 2600 spotlight · 3000 boot · 4000 lock · 5000 modal · 9999 toasts */
+
+/* --- keyboard focus system (a11y) --- */
+:focus{ outline:none; }
+:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+button:focus-visible, [role="button"]:focus-visible, .mb-item:focus-visible{ outline-offset:1px; }
+.desktop-icon:focus-visible, .dock-icon:focus-visible{ outline-offset:2px; }
+input:focus, textarea:focus, select:focus{
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* honor "Reduce Motion" (a11y) */
+body[data-motion="reduce"] *, body[data-motion="reduce"] *::before, body[data-motion="reduce"] *::after{
+  animation-duration:.01ms !important; animation-iteration-count:1 !important;
+  transition-duration:.01ms !important; scroll-behavior:auto !important;
 }
 .hidden{ display:none !important; }
 button{ font-family:inherit; }
@@ -153,6 +181,7 @@ button{ font-family:inherit; }
 #windows{ position:absolute; inset:var(--menubar-h) 0 var(--taskbar-h) 0; z-index:10; pointer-events:none; }
 .window{
   position:absolute; display:flex; flex-direction:column;
+  transition:opacity .16s var(--ease), transform .16s var(--ease);
   pointer-events:auto;
   min-width:340px; min-height:240px;
   background:var(--glass);
@@ -165,7 +194,8 @@ button{ font-family:inherit; }
   transition:box-shadow .2s ease, border-color .2s ease, opacity .18s ease, transform .18s ease;
 }
 .window.opening{ opacity:0; transform:scale(.94) translateY(10px); }
-.window.closing{ opacity:0; transform:scale(.96); pointer-events:none; }
+.window.closing{ opacity:0; transform:scale(.96); pointer-events:none;
+  transition:opacity .15s var(--ease), transform .15s var(--ease); }
 .window.focused{
   border-color:var(--stroke-strong);
   box-shadow:0 34px 90px rgba(0,0,0,.55), 0 4px 16px rgba(0,0,0,.3);
@@ -238,6 +268,12 @@ body[data-theme="light"] .titlebar{
 
 /* ============ TASKBAR ============ */
 /* ============ MENU BAR ============ */
+/* --- shared interaction feedback --- */
+.mb-item, .crumb, .start-app, .calc-key, .fm-item, .maps-city, .btn, .rem-tick, .rem-del, .wc{
+  transition:background var(--dur-1) ease, color var(--dur-1) ease, transform var(--dur-1) var(--ease);
+}
+.btn:active, .start-app:active, .calc-key:active, .and-app:active, .mc-card:active{ transform:scale(.96); }
+
 #menubar{
   position:absolute; top:0; left:0; right:0; height:var(--menubar-h); z-index:2000;
   display:flex; align-items:center; justify-content:space-between;
@@ -392,7 +428,6 @@ body[data-theme="dark"] .dock-edge:hover{ background:rgba(255,255,255,.14); }
   background:var(--chip); border:1px solid var(--stroke);
   color:var(--text); font-size:13px; outline:none;
 }
-.start-search:focus{ border-color:var(--stroke-strong); }
 .start-search::placeholder{ color:var(--muted); }
 .start-grid{
   display:grid; grid-template-columns:repeat(5, 1fr); gap:4px;
@@ -487,7 +522,6 @@ body[data-theme="dark"] .dock-edge:hover{ background:rgba(255,255,255,.14); }
   border:1px solid var(--stroke); color:var(--text);
   font-size:13.5px; outline:none;
 }
-.modal-input:focus{ border-color:var(--stroke-strong); }
 .modal-actions{ display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
 
 /* ============ BUTTONS ============ */
@@ -603,13 +637,12 @@ body[data-theme="dark"] .dock-edge:hover{ background:rgba(255,255,255,.14); }
   background:none; border:1px solid transparent; border-radius:8px;
   color:var(--text); font-size:15px; font-weight:700; outline:none;
 }
-.notes-title:focus{ border-color:var(--stroke-strong); background:var(--chip); }
+.notes-title:focus{ background:var(--chip); }
 .notes-body{
   flex:1; margin:8px 10px 10px; padding:10px 12px; resize:none;
   background:var(--chip); border:1px solid var(--stroke); border-radius:10px;
   color:var(--text); font:12.5px/1.65 var(--mono); outline:none;
 }
-.notes-body:focus{ border-color:var(--stroke-strong); }
 
 /* ============ PAINT ============ */
 .paint{ display:flex; flex-direction:column; height:100%; }
@@ -673,7 +706,6 @@ body[data-theme="dark"] .dock-edge:hover{ background:rgba(255,255,255,.14); }
   background:var(--chip); border:1px solid var(--stroke);
   color:var(--text); outline:none; font-size:13px; min-width:0;
 }
-.br-url:focus{ border-color:var(--stroke-strong); }
 .br-view{ flex:1; position:relative; background:#fff; min-height:0; }
 .br-frame{ position:absolute; inset:0; width:100%; height:100%; border:none; background:#fff; }
 .br-start{
@@ -795,11 +827,27 @@ body[data-motion="reduce"] *::after{
   .dock-sep{ margin:3px 2px; }
 }
 @media (max-width:760px){
+  /* phones: opaque glass instead of live blur (GPU cost) */
+  body[data-theme="dark"]{ --glass:rgba(13,16,31,.93); --glass-2:rgba(17,21,40,.97); }
+  body[data-theme="light"]{ --glass:rgba(244,246,255,.95); --glass-2:rgba(252,252,255,.98); }
   .task-label{ display:none; }
   #menubar{ font-size:12px; padding:0 5px; }
+  .mb-left{ overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch;
+    mask-image:linear-gradient(90deg,#000 85%,transparent); -webkit-mask-image:linear-gradient(90deg,#000 85%,transparent); }
+  .mb-left::-webkit-scrollbar{ display:none; }
   .mb-item{ padding:0 6px; }
   .mb-appname{ display:none; }
   .mb-key{ display:none; }
+  .window{ min-width:0; min-height:0; border-radius:var(--r-sm); }
+  .window, #dock, .modal, .toast, #menubar, .modal-overlay, .mb-menu{
+    -webkit-backdrop-filter:none; backdrop-filter:none;
+  }
+  /* desktop icons: 4-up row grid so they don't cover the whole phone */
+  #desktop-icons{ top:calc(var(--menubar-h) + 6px); right:8px; width:calc(100vw - 16px);
+    grid-auto-flow:row; grid-template-columns:repeat(4, auto); grid-template-rows:none; }
+  .desktop-icon{ width:64px; padding:8px 4px; gap:4px; }
+  .di-ic{ font-size:24px; }
+  .di-label{ font-size:10.5px; }
   #dock{ padding:5px 6px; gap:3px; margin-bottom:6px; border-radius:16px; }
   .dock-icon{ width:40px; height:40px; }
   .dock-tile{ width:36px; height:36px; font-size:22px; }
@@ -808,8 +856,6 @@ body[data-motion="reduce"] *::after{
   .fm-grid{ grid-template-columns:repeat(auto-fill, minmax(76px, 1fr)); }
   .mon-cards{ grid-template-columns:1fr; }
   .notes-side{ width:150px; }
-  .di-ic{ font-size:28px; }
-  .desktop-icon{ width:72px; }
 }
 
 /* ============================================================
@@ -845,7 +891,6 @@ body[data-motion="reduce"] *::after{
   color:var(--text); font-size:12.5px; font-family:inherit; outline:none;
   cursor:pointer; max-width:190px;
 }
-.set-select:focus{ border-color:var(--stroke-strong); }
 
 /* ============ LOCK SCREEN ============ */
 #lock-screen{
@@ -1158,7 +1203,6 @@ html[dir="rtl"] .beats-grid, html[dir="rtl"] .wx-hours{ direction:ltr; }
   background:var(--chip); border:1px solid var(--stroke);
   color:var(--text); outline:none; font-size:13px;
 }
-.yt-url:focus{ border-color:var(--stroke-strong); }
 .yt-player{
   flex:0 0 auto; position:relative; width:100%; aspect-ratio:16/9;
   border-radius:12px; overflow:hidden; background:#000;
@@ -1214,7 +1258,6 @@ html[dir="rtl"] .beats-grid, html[dir="rtl"] .wx-hours{ direction:ltr; }
   background:var(--chip); border:1px solid var(--stroke);
   color:var(--text); outline:none; font-size:13px;
 }
-.maps-q:focus{ border-color:var(--stroke-strong); }
 .maps-cities{ display:flex; gap:6px; flex-wrap:wrap; flex:0 0 auto; }
 .maps-city{
   padding:5px 11px; border-radius:20px;
@@ -1353,7 +1396,6 @@ body[data-theme="dark"] .stocks-row:hover{ background:rgba(255,255,255,.06); }
 
 .rem{ display:flex; flex-direction:column; height:100%; gap:10px; padding:12px; box-sizing:border-box; }
 .rem-add{ border:1px solid rgba(0,0,0,.14); border-radius:10px; padding:9px 12px; font-size:13px; outline:none; font-family:inherit; background:transparent; color:var(--text); }
-.rem-add:focus{ border-color:#0a84ff; }
 .rem-list{ flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
 .rem-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:rgba(0,0,0,.04); font-size:13px; }
 .rem-item.done .rem-text{ text-decoration:line-through; opacity:.55; }

@@ -19,7 +19,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="docs/icon-192.png">
-<link rel="stylesheet" href="css/style.css?v=2.1.0">
+<link rel="stylesheet" href="css/style.css?v=2.2.0">
 </head>
 <body data-theme="dark" data-motion="full">
 
@@ -63,7 +63,7 @@
       </div>
       <div class="boot-bar-wrap"><div id="boot-bar"></div></div>
       <p class="boot-sub" id="boot-sub">Starting your universe…</p>
-      <p class="boot-ver">v2.1.0 · web build · 8 languages</p>
+      <p class="boot-ver">v2.2.0 · web build · 8 languages</p>
     </div>
   </div>
 
@@ -96,47 +96,47 @@
             </g>
           </g>
         </svg>
-          <div class="mb-menu">
-            <button class="mb-mi" data-act="about"><span data-i18n="ctx.about">About Nebula OS</span></button>
+          <div class="mb-menu" role="menu">
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="about"><span data-i18n="ctx.about">About Nebula OS</span></button>
             <div class="mb-sep"></div>
-            <button class="mb-mi" data-act="settings"><span data-i18n="app.settings">Settings…</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="settings"><span data-i18n="app.settings">Settings…</span></button>
             <div class="mb-sep"></div>
-            <button class="mb-mi" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span><span class="mb-key">⌃⌘Q</span></button>
-            <button class="mb-mi" data-act="restart"><span data-i18n="start.restart">Restart…</span></button>
-            <button class="mb-mi" data-act="shutdown"><span data-i18n="start.shutdown">Shut Down…</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span><span class="mb-key">⌃⌘Q</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="restart"><span data-i18n="start.restart">Restart…</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="shutdown"><span data-i18n="start.shutdown">Shut Down…</span></button>
           </div>
         </div>
         <span class="mb-item mb-appname" id="mb-app-name">Nebula</span>
         <div class="mb-item" data-menu role="button" tabindex="0" aria-label="File menu"><span class="mb-label" data-i18n="mb.file">File</span>
-          <div class="mb-menu">
-            <button class="mb-mi" data-act="newNote"><span data-i18n="ctx.newNote">New Note</span><span class="mb-key">⌘N</span></button>
-            <button class="mb-mi" data-act="terminal"><span data-i18n="ctx.terminal">Open Terminal</span><span class="mb-key">⌘T</span></button>
-            <button class="mb-mi" data-act="code"><span data-i18n="app.code">Code Editor</span></button>
-            <button class="mb-mi" data-act="files"><span data-i18n="app.files">Files</span></button>
+          <div class="mb-menu" role="menu">
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="newNote"><span data-i18n="ctx.newNote">New Note</span><span class="mb-key">⌘N</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="terminal"><span data-i18n="ctx.terminal">Open Terminal</span><span class="mb-key">⌘T</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="code"><span data-i18n="app.code">Code Editor</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="files"><span data-i18n="app.files">Files</span></button>
           </div>
         </div>
         <div class="mb-item" data-menu role="button" tabindex="0" aria-label="Edit menu"><span class="mb-label" data-i18n="mb.edit">Edit</span>
-          <div class="mb-menu">
-            <button class="mb-mi" data-act="wallpaper"><span data-i18n="ctx.wallpaper">Next wallpaper</span><span class="mb-key">⌘D</span></button>
-            <button class="mb-mi" data-act="theme"><span data-i18n="ctx.theme">Toggle theme</span></button>
+          <div class="mb-menu" role="menu">
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="wallpaper"><span data-i18n="ctx.wallpaper">Next wallpaper</span><span class="mb-key">⌘D</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="theme"><span data-i18n="ctx.theme">Toggle theme</span></button>
             <div class="mb-sep"></div>
-            <button class="mb-mi" data-act="arrange"><span data-i18n="ctx.arrange">Arrange icons</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="arrange"><span data-i18n="ctx.arrange">Arrange icons</span></button>
           </div>
         </div>
         <div class="mb-item" data-menu role="button" tabindex="0" aria-label="View menu"><span class="mb-label" data-i18n="mb.view">View</span>
-          <div class="mb-menu">
-            <button class="mb-mi" data-act="showDesktop"><span data-i18n="taskbar.showDesktop">Show desktop</span></button>
-            <button class="mb-mi" data-act="mission"><span data-i18n="mc.item">Mission Control</span><span class="mb-key">⌘`</span></button>
+          <div class="mb-menu" role="menu">
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="showDesktop"><span data-i18n="taskbar.showDesktop">Show desktop</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="mission"><span data-i18n="mc.item">Mission Control</span><span class="mb-key">⌘`</span></button>
             <div class="mb-sep"></div>
-            <button class="mb-mi" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="lock"><span data-i18n="ctx.lock">Lock Screen</span></button>
           </div>
         </div>
         <div class="mb-item" data-menu role="button" tabindex="0" aria-label="Window menu"><span class="mb-label" data-i18n="mb.window">Window</span>
-          <div class="mb-menu">
-            <button class="mb-mi" data-act="min"><span data-i18n="mb.min">Minimize</span></button>
-            <button class="mb-mi" data-act="zoom"><span data-i18n="mb.zoom">Zoom</span></button>
+          <div class="mb-menu" role="menu">
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="min"><span data-i18n="mb.min">Minimize</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="zoom"><span data-i18n="mb.zoom">Zoom</span></button>
             <div class="mb-sep"></div>
-            <button class="mb-mi" data-act="showAll"><span data-i18n="mb.showAll">Show All</span></button>
+            <button class="mb-mi" role="menuitem" tabindex="-1" data-act="showAll"><span data-i18n="mb.showAll">Show All</span></button>
           </div>
         </div>
       </div>
@@ -213,8 +213,8 @@
       <div id="asst-out">Try: “open maps” · “next wallpaper” · “lock” · “what is 6×7”</div>
     </div>
 
-    <div id="ctx-menu" class="ctx-menu"></div>
-    <div id="toasts" class="toasts"></div>
+    <div id="ctx-menu" class="ctx-menu" role="menu"></div>
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
     <div id="modal-root"></div>
   </div>
 
@@ -244,12 +244,12 @@
     </div>
   </div>
 
-  <script src="js/fs.js?v=2.1.0"></script>
-  <script src="js/i18n.js?v=2.1.0"></script>
-  <script src="js/os.js?v=2.1.0"></script>
-  <script src="js/apps.js?v=2.1.0"></script>
-  <script src="js/apps-extra.js?v=2.1.0"></script>
-  <script src="js/android.js?v=2.1.0"></script>
+  <script src="js/fs.js?v=2.2.0"></script>
+  <script src="js/i18n.js?v=2.2.0"></script>
+  <script src="js/os.js?v=2.2.0"></script>
+  <script src="js/apps.js?v=2.2.0"></script>
+  <script src="js/apps-extra.js?v=2.2.0"></script>
+  <script src="js/android.js?v=2.2.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });

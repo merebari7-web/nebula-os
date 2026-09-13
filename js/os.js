@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.1.0',
+    version: '2.2.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -528,6 +528,7 @@
     items.forEach((it) => {
       if (it === '-') { m.appendChild(el('div', 'ctx-sep')); return; }
       const b = el('button', 'ctx-item');
+      b.setAttribute('role', 'menuitem');
       b.innerHTML = '<span>' + (it.icon || '') + '</span>' + escapeHtml(it.label);
       b.addEventListener('click', () => { hideMenu(); it.action && it.action(); });
       m.appendChild(b);
@@ -548,7 +549,7 @@
       const root = byId('modal-root');
       const wrap = el('div', 'modal-overlay');
       wrap.innerHTML =
-        '<div class="modal">' +
+        '<div class="modal" role="dialog" aria-modal="true">' +
           '<div class="modal-title">' + escapeHtml(title) + '</div>' +
           (message ? '<div class="modal-msg">' + escapeHtml(message) + '</div>' : '') +
           (input ? '<input class="modal-input" placeholder="' + escapeHtml(placeholder) + '" value="' + escapeHtml(value) + '" spellcheck="false">' : '') +
