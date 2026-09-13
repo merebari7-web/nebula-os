@@ -262,7 +262,17 @@ body[data-theme="dark"] #menubar{
 button.mb-item{ cursor:pointer; }
 button.mb-item:hover, .mb-item.open{ background:rgba(0,0,0,.13); }
 body[data-theme="dark"] button.mb-item:hover, body[data-theme="dark"] .mb-item.open{ background:rgba(255,255,255,.16); }
-.mb-apple{ padding:0 7px; }
+.mb-brand{ padding:0 8px; display:flex; align-items:center; }
+.mb-brand-svg{ display:block; flex:none; }
+.boot-brand{
+  display:block;
+  filter:drop-shadow(0 0 12px rgba(56,189,248,.5)) drop-shadow(0 0 40px rgba(99,102,241,.3));
+  animation:brandPulse 3.4s ease-in-out infinite;
+}
+@keyframes brandPulse{
+  0%,100%{ filter:drop-shadow(0 0 9px rgba(56,189,248,.4)) drop-shadow(0 0 28px rgba(99,102,241,.22)); }
+  50%{ filter:drop-shadow(0 0 18px rgba(56,189,248,.7)) drop-shadow(0 0 54px rgba(99,102,241,.45)); }
+}
 .mb-appname{ font-weight:700; }
 .mb-menu{
   position:absolute; top:calc(100% + 3px); left:0; z-index:2100;

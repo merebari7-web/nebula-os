@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.0.2',
+    version: '2.0.3',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -119,6 +119,10 @@
     document.documentElement.style.setProperty('--accent', OS.settings.accent);
     const vol = byId('tray-vol');
     if (vol) vol.style.opacity = OS.settings.sound ? '1' : '.35';
+    const brand = byId('boot-brand-svg');
+    if (brand && brand.pauseAnimations) {
+      try { OS.settings.reduceMotion ? brand.pauseAnimations() : brand.unpauseAnimations(); } catch (e) {}
+    }
     applyWallpaper(OS.settings.wallpaper);
   };
 
