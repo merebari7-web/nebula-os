@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.0.1',
+    version: '2.0.2',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
