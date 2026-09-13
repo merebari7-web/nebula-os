@@ -215,7 +215,7 @@
                 break;
               }
               case 'uname':
-                print('Nebula 1.3.2 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.0.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -420,9 +420,12 @@
               '<button class="fm-nav" data-nav="up" title="Up one level">↑</button>' +
               '<div class="fm-crumbs"></div>' +
               '<div class="fm-actions">' +
-                '<button class="btn ghost sm" data-act="new">＋ ' + esc(t('common.create')) + '</button>' +
-                '<button class="btn ghost sm" data-act="del">🗑 ' + esc(t('common.delete')) + '</button>' +
+                '<button class="btn ghost sm" data-act="new" title="New folder">＋</button>' +
+                '<button class="btn ghost sm" data-act="import" title="Import files from your computer">⬆</button>' +
+                '<button class="btn ghost sm" data-act="export" title="Export selected file">⬇</button>' +
+                '<button class="btn ghost sm" data-act="del" title="Delete">🗑</button>' +
               '</div>' +
+              '<input type="file" multiple hidden data-filepick>' +
             '</div>' +
             '<div class="fm-main"><div class="fm-grid"></div></div>' +
             '<div class="fm-status"><span class="fm-count"></span><span class="fm-path"></span></div>';
@@ -490,6 +493,43 @@
               if (FS.nodeAt(p)) notify('⚠️', 'Already exists', '“' + v.trim() + '” is already in this folder.');
               else { FS.mkdir(p); render(); }
             });
+          });
+          const picker = root.querySelector('[data-filepick]');
+          root.querySelector('[data-act="import"]').addEventListener('click', () => picker.click());
+          picker.addEventListener('change', async () => {
+            const files = Array.from(picker.files || []);
+            picker.value = '';
+            if (!files.length) return;
+            let last = null;
+            for (const f of files) {
+              let text;
+              try { text = await f.text(); } catch (e) { text = String(f.content || ''); }
+              const name = (f.name || 'file.txt').replace(/[/]/g, '_');
+              let path = (cwd === '/' ? '/' : cwd + '/') + name;
+              try {
+                if (FS.nodeAt(path)) {
+                  path = path.replace(/(\.[^.]+)?$/, ' copy$1');
+                }
+                if (!FS.nodeAt(path)) FS.createFile(path, '');
+                FS.writeFile(path, text);
+                last = path;
+              } catch (e) {}
+            }
+            render();
+            if (last) notify('📂', t('fs.imported'), last);
+          });
+          root.querySelector('[data-act="export"]').addEventListener('click', () => {
+            if (!selected) { notify('⚠️', 'Nothing selected', 'Click an item first.'); return; }
+            const path = (cwd === '/' ? '/' : cwd + '/') + selected;
+            const node = FS.nodeAt(path);
+            if (!node || node.type !== 'file') return;
+            const a = document.createElement('a');
+            a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(node.content || '');
+            a.download = node.name;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            notify('⬇️', t('fs.exported'), node.name);
           });
           root.querySelector('[data-act="del"]').addEventListener('click', () => {
             if (!selected) { notify('⚠️', 'Nothing selected', 'Click an item first.'); return; }
@@ -1317,7 +1357,12 @@
               '<div><span>Engine</span><b>Vanilla JavaScript — 0 dependencies</b></div>' +
               '<div><span>Shell</span><b>nterm 1.1 (tabs · 25+ commands)</b></div>' +
               '<div><span>Window manager</span><b>nebwm (drag · snap · resize)</b></div>' +
-              '<div><span>Shortcuts</span><b>Alt+Tab switcher · Alt+L lock</b></div>' +
+              '<div><span>Spotlight</span><b>Ctrl/⌘+Space — apps, files, math</b></div>' +
+              '<div><span>Mission Control</span><b>Ctrl/⌘+` — window overview</b></div>' +
+              '<div><span>Assistant</span><b>offline natural-language commands</b></div>' +
+              '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
+              '<div><span>Install</span><b>PWA · offline shell via service worker</b></div>' +
+              '<div><span>Shortcuts</span><b>⌘Space · ⌘` · Alt+Tab · Alt+L</b></div>' +
               '<div><span>Filesystem</span><b>virtual, localStorage-backed</b></div>' +
               '<div><span>Audio</span><b>Web Audio API (Beat Deck)</b></div>' +
               '<div><span>Languages</span><b>EN · ES · FR · DE · PT · JA · HI · AR</b></div>' +

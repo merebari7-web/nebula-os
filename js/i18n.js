@@ -95,7 +95,17 @@
       'app.weather': 'Weather',
       'app.snake': 'Snake',
       'app.youtube': 'YouTube',
-      'app.maps': 'Maps'
+      'app.maps': 'Maps',
+      'app.stocks': 'Stocks',
+      'app.reminders': 'Reminders',
+      'spot.hint': 'Search apps, files, math…',
+      'spot.launch': 'Open app',
+      'asst.title': 'Assistant',
+      'asst.hint': 'Type a command… e.g. “open maps”',
+      'rem.add': 'Add a reminder…',
+      'rem.empty': 'No reminders yet',
+      'fs.imported': 'Imported',
+      'fs.exported': 'Exported'
     },
 
     es: {
@@ -187,7 +197,17 @@
       'app.weather': 'Clima',
       'app.snake': 'Serpiente',
       'app.youtube': 'YouTube',
-      'app.maps': 'Mapas'
+      'app.maps': 'Mapas',
+      'app.stocks': 'Mercados',
+      'app.reminders': 'Recordatorios',
+      'spot.hint': 'Buscar apps, archivos, cálculo…',
+      'spot.launch': 'Abrir app',
+      'asst.title': 'Asistente',
+      'asst.hint': 'Escribe un comando… p. ej. «abrir maps»',
+      'rem.add': 'Añadir un recordatorio…',
+      'rem.empty': 'Sin recordatorios',
+      'fs.imported': 'Importado',
+      'fs.exported': 'Exportado'
     },
 
     fr: {
@@ -279,7 +299,17 @@
       'app.weather': 'Météo',
       'app.snake': 'Serpent',
       'app.youtube': 'YouTube',
-      'app.maps': 'Cartes'
+      'app.maps': 'Cartes',
+      'app.stocks': 'Marchés',
+      'app.reminders': 'Rappels',
+      'spot.hint': 'Rechercher apps, fichiers, maths…',
+      'spot.launch': 'Ouvrir l’app',
+      'asst.title': 'Assistant',
+      'asst.hint': 'Tapez une commande… ex. «ouvrir maps»',
+      'rem.add': 'Ajouter un rappel…',
+      'rem.empty': 'Aucun rappel',
+      'fs.imported': 'Importé',
+      'fs.exported': 'Exporté'
     },
 
     de: {
@@ -371,7 +401,17 @@
       'app.weather': 'Wetter',
       'app.snake': 'Schlange',
       'app.youtube': 'YouTube',
-      'app.maps': 'Karten'
+      'app.maps': 'Karten',
+      'app.stocks': 'Kurse',
+      'app.reminders': 'Erinnerungen',
+      'spot.hint': 'Apps, Dateien, Mathematik suchen…',
+      'spot.launch': 'App öffnen',
+      'asst.title': 'Assistent',
+      'asst.hint': 'Befehl eingeben… z. B. „maps öffnen“',
+      'rem.add': 'Erinnerung hinzufügen…',
+      'rem.empty': 'Noch keine Erinnerungen',
+      'fs.imported': 'Importiert',
+      'fs.exported': 'Exportiert'
     },
 
     pt: {
@@ -463,7 +503,17 @@
       'app.weather': 'Clima',
       'app.snake': 'Cobrinha',
       'app.youtube': 'YouTube',
-      'app.maps': 'Mapas'
+      'app.maps': 'Mapas',
+      'app.stocks': 'Mercados',
+      'app.reminders': 'Lembretes',
+      'spot.hint': 'Pesquisar apps, ficheiros, cálculo…',
+      'spot.launch': 'Abrir app',
+      'asst.title': 'Assistente',
+      'asst.hint': 'Escreva um comando… ex. “abrir maps”',
+      'rem.add': 'Adicionar um lembrete…',
+      'rem.empty': 'Sem lembretes',
+      'fs.imported': 'Importado',
+      'fs.exported': 'Exportado',
     },
 
     ja: {
@@ -555,7 +605,17 @@
       'app.weather': '天気',
       'app.snake': 'スネーク',
       'app.youtube': 'YouTube',
-      'app.maps': 'マップ'
+      'app.maps': 'マップ',
+      'app.stocks': '株価',
+      'app.reminders': 'リマインダー',
+      'spot.hint': 'アプリ・ファイル・計算を検索…',
+      'spot.launch': 'アプリを開く',
+      'asst.title': 'アシスタント',
+      'asst.hint': 'コマンドを入力…例:「maps を開く」',
+      'rem.add': 'リマインダーを追加…',
+      'rem.empty': 'リマインダーはまだありません',
+      'fs.imported': 'インポートしました',
+      'fs.exported': 'エクスポートしました'
     },
 
     hi: {
@@ -647,7 +707,17 @@
       'app.weather': 'मौसम',
       'app.snake': 'साँप',
       'app.youtube': 'YouTube',
-      'app.maps': 'नक्शे'
+      'app.maps': 'नक्शे',
+      'app.stocks': 'स्टॉक्स',
+      'app.reminders': 'स्मरणपत्र',
+      'spot.hint': 'ऐप्स, फ़ाइलें, गणना खोजें…',
+      'spot.launch': 'ऐप खोलें',
+      'asst.title': 'सहायक',
+      'asst.hint': 'कमांड लिखें… जैसे “maps खोलें”',
+      'rem.add': 'स्मरणपत्र जोड़ें…',
+      'rem.empty': 'अभी कोई स्मरणपत्र नहीं',
+      'fs.imported': 'आयात किया गया',
+      'fs.exported': 'निर्यात किया गया'
     },
 
     ar: {
@@ -739,7 +809,17 @@
       'app.weather': 'الطقس',
       'app.snake': 'الثعبان',
       'app.youtube': 'يوتيوب',
-      'app.maps': 'خرائط'
+      'app.maps': 'خرائط',
+      'app.stocks': 'الأسواق',
+      'app.reminders': 'التذكيرات',
+      'spot.hint': 'ابحث عن تطبيقات وملفات وحسابات…',
+      'spot.launch': 'افتح التطبيق',
+      'asst.title': 'المساعد',
+      'asst.hint': 'اكتب أمرًا… مثل «افتح maps»',
+      'rem.add': 'أضف تذكيرًا…',
+      'rem.empty': 'لا توجد تذكيرات بعد',
+      'fs.imported': 'تم الاستيراد',
+      'fs.exported': 'تم التصدير'
     }
   };
 

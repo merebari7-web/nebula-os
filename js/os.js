@@ -68,7 +68,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '1.3.2',
+    version: '2.0.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -767,7 +767,7 @@
   }
 
   /* ---------- desktop icons (interactive) ---------- */
-  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'monitor', 'calendar', 'snake', 'settings', 'about'];
+  const DESKTOP_APPS = ['files', 'terminal', 'code', 'notes', 'reminders', 'browser', 'paint', 'beats', 'youtube', 'maps', 'calc', 'clock', 'weather', 'stocks', 'monitor', 'calendar', 'snake', 'settings', 'about'];
 
   let desktopState = loadDesktopState();
   function loadDesktopState() {
@@ -905,6 +905,173 @@
     });
   }
 
+  /* ---------- spotlight (Ctrl/Cmd+Space) ---------- */
+  function buildSpotlight() {
+    const box = byId('spotlight');
+    const input = byId('spot-input');
+    const res = byId('spot-results');
+    if (!box || !input || !res) return;
+    let items = [];
+    let selIdx = 0;
+
+    function paint() {
+      res.innerHTML = '';
+      items.forEach((it, i) => {
+        const b = el('button', 'spot-item' + (i === selIdx ? ' sel' : ''));
+        b.innerHTML = '<span class="spot-ic">' + (it.icon || '') + '</span><span>' + escapeHtml(it.label) +
+          (it.sub ? '<small>' + escapeHtml(it.sub) + '</small>' : '') + '</span>';
+        b.addEventListener('click', () => { it.run(); close(); });
+        res.appendChild(b);
+      });
+      if (!items.length) res.appendChild(el('div', 'spot-empty', 'No results'));
+    }
+    function compute() {
+      const q = input.value.trim().toLowerCase();
+      const list = [];
+      if (/^[\d+\-*/().%\s]+$/.test(q) && /\d/.test(q)) {
+        try {
+          const v = new Function('return (' + q + ')')();
+          if (isFinite(v)) list.push({ icon: '🧮', label: q + ' = ' + v, sub: 'Math', run: () => notify('🧮', 'Calculator', q + ' = ' + v) });
+        } catch (e) {}
+      }
+      Object.values(APPS).forEach((a) => {
+        const label = appTitle(a);
+        if (!q || label.toLowerCase().includes(q) || a.id.includes(q)) list.push({ icon: a.icon || '🪐', label, sub: t('spot.launch'), run: () => openApp(a.id) });
+      });
+      if (q.length >= 2) {
+        const found = [];
+        (function walk(n, p) {
+          (n.children || []).forEach((c) => {
+            const pp = p + '/' + c.name;
+            if (c.type === 'dir') walk(c, pp);
+            else if (c.name.toLowerCase().includes(q)) found.push(c);
+          });
+        })((window.NebulaFS && NebulaFS.fs.root), '');
+        found.forEach((f) => list.push({ icon: '📄', label: f.name, sub: f.path, run: () => { openApp('files'); notify('📄', f.name, f.path); } }));
+      }
+      if (!q || q === 'lock') list.push({ icon: '🔒', label: t('ctx.lock'), run: lockScreen });
+      if (!q || q.includes('theme')) list.push({ icon: '🌓', label: t('ctx.theme'), run: toggleTheme });
+      if (!q || q.includes('desktop')) list.push({ icon: '🖥️', label: t('taskbar.showDesktop'), run: showDesktopAction });
+      return list.slice(0, 9);
+    }
+    function render() { items = compute(); selIdx = 0; paint(); }
+    function open() {
+      box.classList.remove('hidden');
+      input.value = '';
+      input.placeholder = t('spot.hint');
+      render();
+      input.focus();
+      Sound.pop();
+    }
+    function close() { box.classList.add('hidden'); }
+
+    input.addEventListener('input', render);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); if (items[selIdx]) { items[selIdx].run(); close(); } }
+      else if (e.key === 'Escape') { e.stopPropagation(); close(); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!items.length) return;
+        selIdx = (selIdx + (e.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+        paint();
+      }
+    });
+    box.addEventListener('pointerdown', (e) => e.stopPropagation());
+    document.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('#spotlight')) close();
+    }, true);
+    byId('mb-search').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (box.classList.contains('hidden')) open();
+      else close();
+    });
+    OS._spotlight = { open, close };
+  }
+
+  /* ---------- mission control (Ctrl/Cmd+`) ---------- */
+  function openMission() {
+    const grid = byId('mission-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const wins = OS.tasks.map((id) => OS.windows.get(id)).filter(Boolean);
+    if (!wins.length) grid.appendChild(el('div', 'mc-empty', 'No windows open'));
+    wins.forEach((w) => {
+      const card = el('div', 'mc-card' + (w.minimized ? ' min' : ''));
+      card.innerHTML = appTile(w, 'mc-tile') + '<span class="mc-title">' + escapeHtml(w.title) + '</span>';
+      card.addEventListener('click', () => {
+        closeMission();
+        if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); }
+        focusWindow(w);
+      });
+      grid.appendChild(card);
+    });
+    byId('mission').classList.remove('hidden');
+    Sound.pop();
+  }
+  function closeMission() {
+    const m = byId('mission');
+    if (m) m.classList.add('hidden');
+  }
+  function toggleMission() {
+    const m = byId('mission');
+    if (!m) return;
+    if (m.classList.contains('hidden')) openMission();
+    else closeMission();
+  }
+
+  /* ---------- assistant (natural-language commands, fully offline) ---------- */
+  function assistantReply(raw) {
+    const s = String(raw || '').trim().toLowerCase();
+    if (!s) return 'I\u2019m listening. Try “open maps”.';
+    let m;
+    if ((m = s.match(/^(?:open|launch|start)\s+(.+)$/))) {
+      const name = m[1].trim();
+      const a = Object.values(APPS).find((x) => appTitle(x).toLowerCase().includes(name) || x.id.includes(name));
+      if (a) { openApp(a.id); return 'Opening ' + appTitle(a) + '…'; }
+      return 'I couldn\u2019t find an app named “' + name + '”.';
+    }
+    if (/next wallpaper|change wallpaper/.test(s)) { cycleWallpaper(); return 'Wallpaper: ' + WALLPAPERS[OS.settings.wallpaper].name; }
+    if ((m = s.match(/wallpaper[\s:]+(\d+|[a-z]+)/))) {
+      const arg = m[1];
+      const i = /^\d+$/.test(arg) ? parseInt(arg, 10) - 1 : WALLPAPERS.findIndex((w) => w.name.toLowerCase().includes(arg));
+      if (i >= 0) { OS.settings.wallpaper = i; OS.saveSettings(); OS.applySettings(); return 'Wallpaper: ' + WALLPAPERS[i].name; }
+    }
+    if (s.includes('theme')) { toggleTheme(); return (OS.settings.theme === 'dark' ? 'Dark' : 'Light') + ' theme on.'; }
+    if (s.includes('show desktop')) { showDesktopAction(); return 'Show desktop.'; }
+    if (s.includes('lock')) { lockScreen(); return 'Locked. See you soon. 🔒'; }
+    if (s.includes('time')) return 'It\u2019s ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + '.';
+    if (s.includes('date')) return 'Today is ' + new Date().toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' }) + '.';
+    if ((m = s.match(/(?:what is|what's|calculate|calc)\s+([\d+\-*/().%\s]+)/))) {
+      try { const v = new Function('return (' + m[1] + ')')(); if (isFinite(v)) return m[1].trim() + ' = ' + v; } catch (e) {}
+    }
+    if (s.includes('about')) { openApp('about'); return 'About Nebula OS. 🪐'; }
+    if (s.includes('mission')) { toggleMission(); return 'Mission Control.'; }
+    return 'Try: “open maps” · “next wallpaper” · “lock” · “what is 6×7”';
+  }
+  function buildAssistant() {
+    const panel = byId('asst-panel');
+    const input = byId('asst-input');
+    const out = byId('asst-out');
+    if (!panel || !input || !out) return;
+    const btn = byId('mb-asst');
+    const close = () => panel.classList.remove('open');
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (panel.classList.contains('open')) close();
+      else { panel.classList.add('open'); input.value = ''; input.focus(); Sound.pop(); }
+    });
+    document.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('#asst-panel') && !e.target.closest('#mb-asst')) close();
+    }, true);
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const reply = assistantReply(input.value);
+      out.textContent = reply;
+      input.value = '';
+      Sound.pop();
+    });
+  }
+
   /* ---------- menu bar (macOS style) ---------- */
   function buildMenuBar() {
     const items = Array.prototype.slice.call(document.querySelectorAll('#menubar .mb-item[data-menu]'));
@@ -942,6 +1109,7 @@
       theme: () => toggleTheme(),
       arrange: () => arrangeIcons(),
       showDesktop: () => showDesktopAction(),
+      mission: () => toggleMission(),
       min: () => { if (focusedWin) minimizeWindow(focusedWin); },
       zoom: () => { if (focusedWin) toggleMaximize(focusedWin); },
       showAll: () => OS.windows.forEach((w) => { if (w.minimized) { w.minimized = false; w.el.classList.remove('minimized'); } })
@@ -1179,6 +1347,10 @@
     });
     const lp = byId('start-btn');
     if (lp) { lp.title = t('dock.launchpad'); lp.setAttribute('aria-label', t('dock.launchpad')); }
+    const si = byId('spot-input');
+    if (si) si.placeholder = t('spot.hint');
+    const ai = byId('asst-input');
+    if (ai) ai.placeholder = t('asst.hint');
     if (OS._refreshSettings) OS._refreshSettings();
   }
   OS.setLanguage = function (lang) {
@@ -1219,6 +1391,8 @@
     buildDock();
     buildDesktop();
     buildStartMenu();
+    buildSpotlight();
+    buildAssistant();
     tickClock();
     setInterval(tickClock, 1000);
     setInterval(() => {
@@ -1249,12 +1423,16 @@
         byId('start-menu').classList.remove('open');
         hideMenu();
         if (OS._closeMbMenus) OS._closeMbMenus();
+        closeMission();
+        if (OS._spotlight) OS._spotlight.close();
         if (focusedWin === null) {
           document.querySelectorAll('#desktop-icons .desktop-icon.sel').forEach((x) => x.classList.remove('sel'));
         }
       } else if ((e.metaKey || e.ctrlKey) && !e.altKey) {
         const k = e.key.toLowerCase();
         if (k === 'q' && e.ctrlKey && e.metaKey) { e.preventDefault(); lockScreen(); return; }
+        if (k === ' ' && OS._spotlight) { e.preventDefault(); byId('spotlight').classList.contains('hidden') ? OS._spotlight.open() : OS._spotlight.close(); return; }
+        if (e.key === '`') { e.preventDefault(); toggleMission(); return; }
         if (k === 'n') { e.preventDefault(); openApp('notes', { fresh: true }); }
         else if (k === 't') { e.preventDefault(); openApp('terminal'); }
         else if (k === 'd') { e.preventDefault(); cycleWallpaper(); }

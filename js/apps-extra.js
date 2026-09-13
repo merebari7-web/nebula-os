@@ -1073,6 +1073,144 @@
     }
   });
 
+  /* ============================================================
+     STOCKS — live markets (CoinGecko, no API key)
+     ============================================================ */
+  registerApp({
+    id: 'stocks',
+    title: 'Stocks',
+    titleKey: 'app.stocks',
+    icon: '📈',
+    tile: 'linear-gradient(135deg,#10b981,#0ea5e9)',
+    open() {
+      createWindow({
+        id: 'stocks',
+        appId: 'stocks',
+        title: t('app.stocks'),
+        icon: '📈',
+        width: 640,
+        height: 460,
+        content(win) {
+          const root = $el('div', 'stocks');
+          root.innerHTML =
+            '<div class="stocks-bar">' +
+              '<span class="stocks-title">📈 ' + esc(t('app.stocks')) + '</span>' +
+              '<span class="stocks-badge" data-badge>SAMPLE DATA</span>' +
+              '<span class="stocks-updated" data-updated></span>' +
+              '<button class="btn ghost sm" data-refresh>⟳</button>' +
+            '</div>' +
+            '<div class="stocks-list" data-list></div>';
+          win.body.appendChild(root);
+          const list = root.querySelector('[data-list]');
+          const badge = root.querySelector('[data-badge]');
+          const updated = root.querySelector('[data-updated]');
+
+          const DEMO = [
+            ['Bitcoin', 'BTC', 77274, 2.4], ['Ethereum', 'ETH', 3412, -1.2],
+            ['Tether', 'USDT', 1.0, 0.1], ['BNB', 'BNB', 652, 0.8],
+            ['Solana', 'SOL', 188, 4.9], ['XRP', 'XRP', 2.41, -0.6],
+            ['USDC', 'USDC', 0.999, 0.0], ['Cardano', 'ADA', 0.98, -2.1],
+            ['Dogecoin', 'DOGE', 0.32, 7.2], ['Avalanche', 'AVAX', 39.1, 1.5]
+          ];
+          const fmtPrice = (p) => (p >= 1000 ? p.toLocaleString(undefined, { maximumFractionDigits: 0 }) : (p < 2 ? p.toFixed(4) : p.toFixed(2)));
+
+          function rows(data, live) {
+            badge.textContent = live ? '● LIVE' : 'SAMPLE DATA';
+            badge.classList.toggle('live', !!live);
+            list.innerHTML = data.map((c) =>
+              '<div class="stocks-row">' +
+                '<span class="stocks-sym">' + esc(c[1]) + '</span>' +
+                '<span class="stocks-name">' + esc(c[0]) + '</span>' +
+                '<b class="stocks-price">$' + fmtPrice(c[2]) + '</b>' +
+                '<span class="stocks-chg ' + (c[3] >= 0 ? 'up' : 'down') + '">' + (c[3] >= 0 ? '▲' : '▼') + ' ' + Math.abs(c[3]).toFixed(2) + '%</span>' +
+              '</div>'
+            ).join('');
+          }
+
+          function load() {
+            if (typeof fetch !== 'function') return;
+            fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10')
+              .then((r) => r.json())
+              .then((data) => {
+                if (!Array.isArray(data) || !data.length) { rows(DEMO, false); return; }
+                rows(data.map((c) => [c.name, (c.symbol || '').toUpperCase(), c.current_price, c.price_change_percentage_24h || 0]), true);
+                updated.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              })
+              .catch(() => { rows(DEMO, false); });
+          }
+
+          rows(DEMO, false);
+          root.querySelector('[data-refresh]').addEventListener('click', load);
+          load();
+        }
+      });
+    }
+  });
+
+  /* ============================================================
+     REMINDERS — persistent to-do list
+     ============================================================ */
+  const REM_KEY = 'nebula.reminders.v1';
+
+  registerApp({
+    id: 'reminders',
+    title: 'Reminders',
+    titleKey: 'app.reminders',
+    icon: '✅',
+    tile: 'linear-gradient(135deg,#f43f5e,#fb7185)',
+    open() {
+      const existing = OS.windows.get('reminders');
+      if (existing) { focusWindow(existing); return; }
+      createWindow({
+        id: 'reminders',
+        appId: 'reminders',
+        title: t('app.reminders'),
+        icon: '✅',
+        width: 460,
+        height: 420,
+        content(win) {
+          let items = [];
+          try { items = JSON.parse(localStorage.getItem(REM_KEY)) || []; } catch (e) {}
+          const save = () => { try { localStorage.setItem(REM_KEY, JSON.stringify(items)); } catch (e) {} };
+
+          const root = $el('div', 'rem');
+          root.innerHTML =
+            '<input class="rem-add" placeholder="' + esc(t('rem.add')) + '" spellcheck="false">' +
+            '<div class="rem-list"></div>' +
+            '<div class="rem-status"></div>';
+          win.body.appendChild(root);
+          const inp = root.querySelector('.rem-add');
+          const listEl = root.querySelector('.rem-list');
+          const status = root.querySelector('.rem-status');
+
+          function render() {
+            listEl.innerHTML = '';
+            if (!items.length) listEl.appendChild($el('div', 'rem-empty', t('rem.empty')));
+            items.forEach((it) => {
+              const row = $el('div', 'rem-item' + (it.done ? ' done' : ''));
+              row.innerHTML = '<button class="rem-tick" aria-label="toggle">' + (it.done ? '✓' : '') + '</button>' +
+                '<span class="rem-text">' + esc(it.text) + '</span>' +
+                '<button class="rem-del" aria-label="delete">✕</button>';
+              row.querySelector('.rem-tick').addEventListener('click', () => { it.done = !it.done; save(); render(); });
+              row.querySelector('.rem-del').addEventListener('click', () => { items = items.filter((x) => x !== it); save(); render(); });
+              listEl.appendChild(row);
+            });
+            const done = items.filter((x) => x.done).length;
+            status.textContent = items.length ? done + ' of ' + items.length + ' done' : '';
+          }
+          inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && inp.value.trim()) {
+              items.push({ text: inp.value.trim(), done: false, at: Date.now() });
+              inp.value = '';
+              save(); render(); Sound.pop();
+            }
+          });
+          render();
+        }
+      });
+    }
+  });
+
 window.Nebula = Object.assign({}, window.Nebula, { highlightCode, langOf });
 
   /* boot once every app (incl. this file's) is registered */

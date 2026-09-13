@@ -1,0 +1,16 @@
+{
+  "name": "Nebula OS",
+  "short_name": "Nebula",
+  "description": "An operating system for the web — 19 apps, macOS-style shell, window manager, virtual filesystem, live markets. 100% in your browser.",
+  "id": "nebula-os",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#05060f",
+  "theme_color": "#0a84ff",
+  "icons": [
+    { "src": "docs/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "docs/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
