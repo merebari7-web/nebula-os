@@ -108,7 +108,7 @@ function buildApk(pkg, ver) {
 
   /* ---------- boot ---------- */
   console.log('--- boot ---');
-  ok(window.OS && window.OS.version === '2.9.0', 'OS booted at v2.9.0');
+  ok(window.OS && window.OS.version === '2.10.0', 'OS booted at v2.10.0');
   ok(typeof window.APPS === 'object', 'APPS registry exposed');
   ok(Object.keys(window.APPS).length === 27, '27 apps registered (' + Object.keys(window.APPS).length + ')');
   ok(window.WALLPAPERS.length === 8, '8 wallpapers');
@@ -715,6 +715,31 @@ function buildApk(pkg, ver) {
   winMenuEl.click();
   await sleep(60);
   window.closeWindow('notes');
+  await sleep(80);
+
+  /* ---------- sound pack ---------- */
+  console.log('--- sound ----------');
+  ok(typeof window.Sound === 'object' && !!window.Sound.notify && !!window.Sound.tv && !!window.Sound.sweep, 'sound pack methods exposed');
+  window.OS.settings.soundVol = 0.5;
+  window.Sound.notify(); window.Sound.tv(); window.Sound.lock(); window.Sound.unlock(); window.Sound.power(); window.Sound.start();
+  ok(true, 'sound functions safe without AudioContext');
+  window.openApp('settings');
+  await sleep(140);
+  const sndW = window.OS.windows.get('settings');
+  ok(!!sndW, 'settings opens for sound checks');
+  const volEl = sndW.el.querySelector('[data-vol]');
+  ok(!!volEl, 'volume slider present');
+  volEl.value = '40';
+  volEl.dispatchEvent(new window.Event('input', { bubbles: true }));
+  await sleep(60);
+  ok(Math.abs(window.OS.settings.soundVol - 0.4) < 0.001, 'volume slider updates settings');
+  const rawSet = JSON.parse(window.localStorage.getItem('nebula.settings.v1') || '{}');
+  ok(rawSet.soundVol === 0.4, 'soundVol persisted to localStorage');
+  sndW.el.querySelector('[data-soundtest]').click();
+  await sleep(60);
+  ok(true, 'sound test button safe');
+  window.OS.settings.soundVol = 0.5;
+  window.closeWindow('settings');
   await sleep(80);
 
   /* ---------- backup (last: restore path reloads after 500ms) ---------- */

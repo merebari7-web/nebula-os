@@ -31,3 +31,5 @@ test/snip_snenigine.js
 test/splice29.py
 test/patch_test29.py
 test/i18n_v290.py
+test/i18n_v2100.py
+test/patch_test2100.py

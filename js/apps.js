@@ -262,7 +262,7 @@ function resolvePath(cwd, arg) {
                 break;
               }
               case 'uname':
-                print('Nebula 2.9.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
+                print('Nebula 2.10.0 nebula-es2022 (JavaScript) ' + (navigator.platform || 'web') + ' x86_64 web', s.out);
                 break;
               case 'ping': {
                 const host = arg || 'nebula.local';
@@ -1367,6 +1367,8 @@ function resolvePath(cwd, arg) {
               '<div class="set-sec"><h3>' + esc(t('set.behavior')) + '</h3>' +
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.sound')) + '</div><div class="sub">' + esc(t('set.soundSub')) + '</div></div>' +
                   '<input type="checkbox" class="check" data-key="sound"></div>' +
+                '<div class="set-row"><div><div class="lbl">' + esc(t('set.vol')) + '</div><div class="sub">' + esc(t('set.volSub')) + '</div></div>' +
+                  '<div style="display:flex;gap:10px;align-items:center"><input type="range" min="0" max="100" step="5" data-vol style="width:150px"><button class="btn ghost sm" data-soundtest>' + esc(t('set.test')) + '</button></div></div>' +
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.motion')) + '</div><div class="sub">' + esc(t('set.motionSub')) + '</div></div>' +
                   '<input type="checkbox" class="check" data-key="reduceMotion"></div>' +
                 '<div class="set-row"><div><div class="lbl">' + esc(t('set.language')) + '</div><div class="sub">' + esc(t('set.languageSub')) + '</div></div>' +
@@ -1417,6 +1419,10 @@ function resolvePath(cwd, arg) {
               c.checked = !!s[c.dataset.key];
               c.addEventListener('change', () => { s[c.dataset.key] = c.checked; OS.saveSettings(); OS.applySettings(); });
             });
+            const volEl = box.querySelector('[data-vol]');
+            volEl.value = Math.round((typeof s.soundVol === 'number' ? s.soundVol : 0.8) * 100);
+            volEl.addEventListener('input', () => { s.soundVol = parseInt(volEl.value, 10) / 100; OS.saveSettings(); });
+            box.querySelector('[data-soundtest]').addEventListener('click', () => { if (s.sound) Sound.notify(); });
             box.querySelector('[data-lang]').addEventListener('change', (e) => OS.setLanguage(e.target.value));
             box.querySelector('[data-idlemin]').addEventListener('change', (e) => {
               s.idleMinutes = parseInt(e.target.value, 10); OS.saveSettings();
@@ -1512,6 +1518,7 @@ function resolvePath(cwd, arg) {
               '<div><span>Stocks</span><b>live markets · CoinGecko</b></div>' +
               '<div><span>Android</span><b>APK install · web-bridge runtime · App Center</b></div>' +
               '<div><span>Themes</span><b>Dark · Light · Patriot (gold &amp; navy) · 8 wallpapers · 🎆 Celebrate</b></div>' +
+              '<div><span>New in 2.10</span><b>Sound pack: notification, lock/unlock, TV, power-down (synthesized, no files) + Settings volume slider & test</b></div>' +
               '<div><span>New in 2.9</span><b>Window Flow: keyboard + menu snapping (Alt+← → ↑ ↓) with SR announcements</b></div>' +
               '<div><span>New in 2.8</span><b>Today widget · Task due/overdue reminders · Notes publish as HTML</b></div>' +
               '<div><span>New in 2.5</span><b>Contacts (vCard/CSV) · Music (local audio) · Backup (one-file restore) · Onboarding tour</b></div>' +

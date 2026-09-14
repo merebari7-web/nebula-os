@@ -42,6 +42,7 @@
     accent: '#0a84ff',
     theme: 'dark',
     sound: true,
+    soundVol: 0.8,
     reduceMotion: false,
     language: 'en',
     pin: '',
@@ -297,7 +298,7 @@
     tvState = null;
     Audit.log('tv.mode.off');
   }
-  function tvToggle() { if (tvState) tvClose(); else tvOpen(); }
+  function tvToggle() { Sound.tv(); if (tvState) tvClose(); else tvOpen(); }
   function tvKeyHandler(e) {
     if (!tvState) return;
     const k = e.key;
@@ -431,7 +432,7 @@
   /* ---------- OS state ---------- */
   const OS = {
     name: 'Nebula OS',
-    version: '2.9.0',
+    version: '2.10.0',
     startedAt: Date.now(),
     z: 100,
     seq: 1,
@@ -520,7 +521,8 @@
       const o = c.createOscillator(), g = c.createGain();
       o.type = type || 'sine';
       o.frequency.value = freq || 520;
-      g.gain.setValueAtTime(gain || 0.04, c.currentTime);
+      const vol = (typeof OS.settings.soundVol === 'number') ? OS.settings.soundVol : 0.8;
+      g.gain.setValueAtTime((gain || 0.04) * vol, c.currentTime);
       g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + (dur || 0.08));
       o.connect(g); g.connect(c.destination);
       o.start(); o.stop(c.currentTime + (dur || 0.08) + 0.03);
@@ -532,7 +534,43 @@
       this.blip(523.25, 0.35, 'sine', 0.03);
       setTimeout(() => this.blip(783.99, 0.5, 'sine', 0.03), 140);
     },
-    fail() { this.blip(196, 0.18, 'square', 0.025); }
+    fail() { this.blip(196, 0.18, 'square', 0.025); },
+    notify() {
+      this.blip(659.25, 0.09, 'sine', 0.03);
+      setTimeout(() => this.blip(880, 0.14, 'sine', 0.028), 90);
+    },
+    lock() {
+      this.blip(440, 0.1, 'sine', 0.03);
+      setTimeout(() => this.blip(330, 0.12, 'sine', 0.028), 100);
+      setTimeout(() => this.blip(220, 0.2, 'sine', 0.026), 210);
+    },
+    unlock() {
+      this.blip(330, 0.1, 'sine', 0.03);
+      setTimeout(() => this.blip(440, 0.12, 'sine', 0.028), 100);
+      setTimeout(() => this.blip(659.25, 0.2, 'sine', 0.026), 210);
+    },
+    tv() { this.sweep(220, 880, 0.35, 'sine', 0.03); },
+    power() {
+      [523.25, 392, 261.63, 196].forEach((f, i) => setTimeout(() => this.blip(f, 0.22, 'sine', 0.03), i * 130));
+    },
+    start() {
+      [392, 523.25, 659.25, 783.99].forEach((f, i) => setTimeout(() => this.blip(f, 0.12, 'triangle', 0.024), i * 90));
+    },
+    sweep(f1, f2, dur, type, gain) {
+      if (!OS.settings.sound) return;
+      this.ensure();
+      const c = this.ctx;
+      if (!c) return;
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = type || 'sine';
+      const vol = (typeof OS.settings.soundVol === 'number') ? OS.settings.soundVol : 0.8;
+      o.frequency.setValueAtTime(f1, c.currentTime);
+      o.frequency.exponentialRampToValueAtTime(Math.max(f2, 1), c.currentTime + dur);
+      g.gain.setValueAtTime((gain || 0.03) * vol, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + dur);
+      o.connect(g); g.connect(c.destination);
+      o.start(); o.stop(c.currentTime + dur + 0.03);
+    }
   };
 
   /* ---------- app registry ---------- */
@@ -956,6 +994,7 @@
   function notify(icon, title, body) {
     const wrap = byId('toasts');
     if (!wrap) return;
+    Sound.notify();
     const toast = el('div', 'toast');
     toast.innerHTML = '<span class="toast-icon">' + (icon || '💬') + '</span>' +
       '<div><strong>' + escapeHtml(title) + '</strong>' +
@@ -1200,6 +1239,7 @@
 
   function lockScreen() {
     if (isLocked()) return;
+    Sound.lock();
     byId('lock-bg').style.background = WALLPAPERS[OS.settings.wallpaper].css;
     updateLockTime();
     const hasPin = !!OS.settings.pinHash;
@@ -1219,6 +1259,7 @@
     announce(t('lock.announced'));
   }
   function unlockScreen() {
+    Sound.unlock();
     byId('lock-screen').classList.add('hidden');
     document.body.classList.remove('locked');
     lastActivity = Date.now();
@@ -1797,7 +1838,7 @@
       settings: () => openApp('settings'),
       lock: () => lockScreen(),
       restart: () => location.reload(),
-      shutdown: () => { Sound.close(); closeMenus(); byId('shutdown').classList.remove('hidden'); },
+      shutdown: () => { Sound.power(); closeMenus(); byId('shutdown').classList.remove('hidden'); },
       newNote: () => openApp('notes', { fresh: true }),
       terminal: () => openApp('terminal'),
       code: () => openApp('code'),
@@ -2092,7 +2133,7 @@
   /* ---------- init ---------- */
   OS.init = function () {
     migratePin();
-    Audit.log('system.boot', 'Nebula OS v2.9.0');
+    Audit.log('system.boot', 'Nebula OS v2.10.0');
     OS.applySettings();
     applyI18n();
     buildLock();

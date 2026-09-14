@@ -23,6 +23,10 @@
 - **Files integration** — `.apk` files get the 🤖 icon; double-click to hand them to the Android runtime
 - Honest about physics: browsers can't execute Android bytecode — the runtime is a compatibility bridge, and the info screen says so for packages with no web version
 
+### 🔊 Sound Edition (v2.10)
+- **Sound pack** — fully synthesized (Web Audio, zero files): notification chime, lock/unlock, TV-mode sweep, power-down arpeggio, boot start, plus the existing open/close/pop/fail. Every sound honors the master switch
+- **Settings → Sound** — new **volume slider** (0–100%, persisted) and a **Test** button; volume scales every system sound
+
 ### 🌊 Flow Edition (v2.9)
 - **Window Flow** — snap any window with the **keyboard or the Window menu**: Alt+← / Alt+→ for half-screen, Alt+↑ maximize, Alt+↓ restore. Mouse edge-snapping shares the same engine (saved-rect restore included)
 - **Screen-reader announcements** for every window state change: snapped left/right, maximized, restored
@@ -174,4 +178,4 @@ Nebula.lockScreen()
 ```
 
 ---
-*Made with ♥ in the browser. v2.9.0 — Flow Edition*
+*Made with ♥ in the browser. v2.10.0 — Sound Edition*

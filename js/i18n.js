@@ -270,7 +270,10 @@
       'flow.mMax': 'Maximize',
       'flow.mRestore': 'Restore',
       'flow.snapK': 'Snap focused window',
-      'flow.maxK': 'Maximize / restore focused window'
+      'flow.maxK': 'Maximize / restore focused window',
+      'set.vol': 'Volume',
+      'set.volSub': 'Loudness of system sounds',
+      'set.test': 'Test'
     },
 
     es: {
@@ -537,7 +540,10 @@
       'flow.mMax': 'Maximizar',
       'flow.mRestore': 'Restaurar',
       'flow.snapK': 'Acoplar la ventana enfocada',
-      'flow.maxK': 'Maximizar / restaurar la ventana enfocada'
+      'flow.maxK': 'Maximizar / restaurar la ventana enfocada',
+      'set.vol': 'Volumen',
+      'set.volSub': 'Intensidad de los sonidos del sistema',
+      'set.test': 'Probar'
     },
 
     fr: {
@@ -804,7 +810,10 @@
       'flow.mMax': 'Agrandir',
       'flow.mRestore': 'Restaurer',
       'flow.snapK': 'Coller la fenêtre ciblée',
-      'flow.maxK': 'Agrandir / restaurer la fenêtre ciblée'
+      'flow.maxK': 'Agrandir / restaurer la fenêtre ciblée',
+      'set.vol': 'Volume',
+      'set.volSub': 'Intensité des sons du système',
+      'set.test': 'Tester'
     },
 
     de: {
@@ -1071,7 +1080,10 @@
       'flow.mMax': 'Maximieren',
       'flow.mRestore': 'Wiederherstellen',
       'flow.snapK': 'Fokussiertes Fenster andocken',
-      'flow.maxK': 'Fokussiertes Fenster maximieren / wiederherstellen'
+      'flow.maxK': 'Fokussiertes Fenster maximieren / wiederherstellen',
+      'set.vol': 'Lautstärke',
+      'set.volSub': 'Lautstärke der Systemgeräusche',
+      'set.test': 'Testen'
     },
 
     pt: {
@@ -1338,7 +1350,10 @@
       'flow.mMax': 'Maximizar',
       'flow.mRestore': 'Restaurar',
       'flow.snapK': 'Ancorar a janela focada',
-      'flow.maxK': 'Maximizar / restaurar a janela focada'
+      'flow.maxK': 'Maximizar / restaurar a janela focada',
+      'set.vol': 'Volume',
+      'set.volSub': 'Intensidade dos sons do sistema',
+      'set.test': 'Testar'
     },
 
     ja: {
@@ -1605,7 +1620,10 @@
       'flow.mMax': '最大化',
       'flow.mRestore': '元に戻す',
       'flow.snapK': 'フォーカス中のウィンドウをスナップ',
-      'flow.maxK': 'フォーカス中のウィンドウの最大化 / 復元'
+      'flow.maxK': 'フォーカス中のウィンドウの最大化 / 復元',
+      'set.vol': '音量',
+      'set.volSub': 'システム音の大きさ',
+      'set.test': 'テスト'
     },
 
     hi: {
@@ -1872,7 +1890,10 @@
       'flow.mMax': 'अधिकतम करें',
       'flow.mRestore': 'पुनर्स्थापित करें',
       'flow.snapK': 'फोकस वाली विंडो स्नैप करें',
-      'flow.maxK': 'फोकस वाली विंडो अधिकतम / पुनर्स्थापित करें'
+      'flow.maxK': 'फोकस वाली विंडो अधिकतम / पुनर्स्थापित करें',
+      'set.vol': 'वॉल्यूम',
+      'set.volSub': 'सिस्टम ध्वनि की तीव्रता',
+      'set.test': 'परीक्षण'
     },
 
     ar: {
@@ -2139,7 +2160,10 @@
       'flow.mMax': 'تعميم',
       'flow.mRestore': 'استعادة',
       'flow.snapK': 'تثبيت النافذة المحددة',
-      'flow.maxK': 'تعميم / استعادة النافذة المحددة'
+      'flow.maxK': 'تعميم / استعادة النافذة المحددة',
+      'set.vol': 'مستوى الصوت',
+      'set.volSub': 'شدة أصوات النظام',
+      'set.test': 'تجربة'
     }
   };
 
